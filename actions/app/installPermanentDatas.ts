@@ -1,5 +1,5 @@
 import { sha1 } from 'react-native-sha1';
-import { stringMd5 } from 'react-native-quick-md5';
+// import { stringMd5 } from 'react-native-quick-md5';
 import useDevice from '../../composables/useDevice';
 import useStorages from '../../composables/useStorages';
 
@@ -12,7 +12,7 @@ export default async () => {
     console.log('installPermanentDatas');
     const device = await useDevice();
     const MMKVPerm = useStorages.getMMKVPerm();
-    const permanentUniqID = await sha1(stringMd5(device.uniqId));
+    const permanentUniqID = await sha1(device.uniqId);
     console.log('permanentUniqID : ', permanentUniqID);
     Store.dispatch(setPermanentUniqID(permanentUniqID))
     MMKVPerm.set(MEM_STORAGE_UID, permanentUniqID);

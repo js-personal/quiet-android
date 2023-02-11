@@ -1,0 +1,6 @@
+
+#Helpers (Windows)
+
+> npm config set script-shell "C:\\Program Files\\git\\bin\\bash.exe"
+revert :
+> npm config delete script-shell
