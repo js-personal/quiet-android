@@ -5,7 +5,7 @@ import { CustomTheme } from '@assets/themes';
 
 import useTranslation from '@composables/useTranslation';
 
-import BaseAnimationChain, { TEntryAnimationProps } from '@components/BaseAnimationChain';
+import BaseAnimationChain, { TEntryFrameProps } from '@components/BaseAnimationChain';
 import { memo } from 'react';
 
 type Props = {
@@ -18,7 +18,7 @@ export default memo((props: Props) => {
     const theme = useTheme() as CustomTheme;
     const enabled = props.enable !== undefined ? props.enable : true;
     let linkImageTouchHand;
-    
+
     switch (true) {
         case theme.name === 'light':
             linkImageTouchHand = require('@assets/img/touch-screen-line-light.png');
@@ -28,7 +28,7 @@ export default memo((props: Props) => {
             break;
     }
 
-    const animationSequencesTextWelcome: TEntryAnimationProps[] = [
+    const framesTextWelcome: TEntryFrameProps[] = [
         {
             sequences: [
                 {
@@ -60,7 +60,7 @@ export default memo((props: Props) => {
         },
     ];
 
-    const animationSequencesTextOn: TEntryAnimationProps[] = [
+    const framesTextOn: TEntryFrameProps[] = [
         {
             sequences: [
                 {
@@ -85,7 +85,7 @@ export default memo((props: Props) => {
         },
     ];
 
-    const animationSequencesCtnLogo: TEntryAnimationProps[] = [
+    const framesCtnLogo: TEntryFrameProps[] = [
         {
             sequences: [
                 {
@@ -98,7 +98,7 @@ export default memo((props: Props) => {
             ],
         },
     ];
-    const animationSequencesLogoImage: TEntryAnimationProps[] = [
+    const framesLogoImage: TEntryFrameProps[] = [
         {
             sequences: [
                 {
@@ -111,7 +111,7 @@ export default memo((props: Props) => {
             ],
         },
     ];
-    const animationSequencesLogoTitle: TEntryAnimationProps[] = [
+    const framesLogoTitle: TEntryFrameProps[] = [
         {
             sequences: [
                 {
@@ -125,7 +125,7 @@ export default memo((props: Props) => {
         },
     ];
 
-    const animationSequencesTextDescription: TEntryAnimationProps[] = [
+    const framesTextDescription: TEntryFrameProps[] = [
         {
             sequences: [
                 {
@@ -140,7 +140,7 @@ export default memo((props: Props) => {
         },
     ];
 
-    const animationSequencesSlideTouch: TEntryAnimationProps[] = [
+    const framesSlideTouch: TEntryFrameProps[] = [
         {
             sequences: [
                 {
@@ -154,7 +154,7 @@ export default memo((props: Props) => {
         },
     ];
 
-    const animationSequencesSlideTouchHand:TEntryAnimationProps[] = [
+    const framesSlideTouchHand:TEntryFrameProps[] = [
         {
             sequences: [
                 {
@@ -188,34 +188,35 @@ export default memo((props: Props) => {
             ],
         },
     ]
+
     return (
         <View style={[RootCSS.container, RootCSS.justifyCenter, RootCSS.alignCenter]}>
             <Text>ENABLED : {enabled ? 'true' : 'false' }</Text>
-            <BaseAnimationChain animations={animationSequencesTextWelcome} disabled={!enabled}>
+            <BaseAnimationChain frames={framesTextWelcome} disabled={!enabled} restartAfterDisable={true}>
                 <Text style={styles.textWelcome}>{translate('w.welcome')}</Text>
             </BaseAnimationChain>
-            <BaseAnimationChain animations={animationSequencesTextOn} disabled={!enabled}>
+            <BaseAnimationChain frames={framesTextOn} disabled={!enabled} restartAfterDisable={true}>
                 <Text style={styles.textOn}>{translate('w.on')}</Text>
             </BaseAnimationChain>
 
-            <BaseAnimationChain animations={animationSequencesCtnLogo} disabled={!enabled}>
+            <BaseAnimationChain frames={framesCtnLogo} disabled={!enabled} restartAfterDisable={true}>
                 <View style={styles.logoContainer}>
-                    <BaseAnimationChain animations={animationSequencesLogoImage} disabled={!enabled}>
+                    <BaseAnimationChain frames={framesLogoImage} disabled={!enabled} restartAfterDisable={true}>
                         <Image source={require('@assets/img/logo.png')} style={styles.logo} />
                     </BaseAnimationChain>
-                    <BaseAnimationChain animations={animationSequencesLogoTitle} disabled={!enabled}>
+                    <BaseAnimationChain frames={framesLogoTitle} disabled={!enabled} restartAfterDisable={true}>
                         <Text style={styles.textApp}>Quiet</Text>
                     </BaseAnimationChain>
                 </View>
             </BaseAnimationChain>
-            <BaseAnimationChain animations={animationSequencesTextDescription} disabled={!enabled}>
+            <BaseAnimationChain frames={framesTextDescription} disabled={!enabled} restartAfterDisable={true}>
                 <View style={styles.logoContainer}>
                     <Text style={styles.textDescription}>{translate('present.description')}</Text>
                 </View>
             </BaseAnimationChain>
-            <BaseAnimationChain animations={animationSequencesSlideTouch} disabled={!enabled}>
+            <BaseAnimationChain frames={framesSlideTouch} disabled={!enabled}>
                 <View style={styles.touchContainer}>
-                    <BaseAnimationChain animations={animationSequencesSlideTouchHand} infinite={true} disabled={!enabled}>
+                    <BaseAnimationChain frames={framesSlideTouchHand} infinite={true} disabled={!enabled}>
                         <Image source={linkImageTouchHand} style={styles.touchIcon} />
                     </BaseAnimationChain>
                 </View>

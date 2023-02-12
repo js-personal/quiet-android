@@ -59,7 +59,7 @@ export default function Presentation() {
             },
             {
                 name: 'secure-from-inside',
-                component: <Slide index={1} active={activeSlide}><SecureInside /></Slide>,
+                component: <Slide index={1} active={activeSlide}><Welcome /></Slide>,
             },
             {
                 name: 'secure-from-outside',

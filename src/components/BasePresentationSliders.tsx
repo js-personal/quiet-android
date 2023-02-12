@@ -1,6 +1,6 @@
 import { FunctionComponentElement, memo, useCallback, useRef, useMemo } from 'react';
 import { StyleSheet, View, NativeScrollEvent, Animated, NativeSyntheticEvent } from 'react-native';
-import BaseAnimationChain, { TEntryAnimationProps } from './BaseAnimationChain';
+import BaseAnimationChain, { TEntryFrameProps } from './BaseAnimationChain';
 import PaginationDotLiquid from './PaginationDotLiquid';
 
 type TSlide = {
@@ -18,8 +18,8 @@ type BasePresentationSlidersProps = {
     dotActive?: object;
     dotInactive?: object;
     paginationEnabled?: boolean;
-    paginationAppearSequences?: TEntryAnimationProps[];
-    paginationDisappearSequences?: TEntryAnimationProps[];
+    paginationAppearSequences?: TEntryFrameProps[];
+    paginationDisappearSequences?: TEntryFrameProps[];
     onChangeSlide?: (id: number | undefined) => void;
 };
 type TPaginationMemoProps = {
@@ -88,13 +88,13 @@ export default memo(function BasePresentationSliders(props: BasePresentationSlid
         if (!animationRequested) {
             return PaginationMemo;
         } else {
-            const animation: TEntryAnimationProps[] | undefined = props.paginationEnabled && props.paginationAppearSequences 
+            const frames: TEntryFrameProps[] | undefined = props.paginationEnabled && props.paginationAppearSequences 
             ? props.paginationAppearSequences
             : props.paginationDisappearSequences;
             
-            if (animation)
+            if (frames)
                 return (
-                    <BaseAnimationChain animations={ animation }>
+                    <BaseAnimationChain frames={ frames }>
                       {PaginationMemo}
                     </BaseAnimationChain>
                 );

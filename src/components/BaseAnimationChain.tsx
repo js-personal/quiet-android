@@ -1,23 +1,22 @@
-
-import { Dispatch, memo, PropsWithChildren, SetStateAction, useEffect, useRef, useState } from 'react';
+import { Dispatch, memo, PropsWithChildren, SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, EasingFunction } from 'react-native';
 
-const EntryAnimationSequenceType = ['fade','slide'] as const;
-export type TEntryAnimationSequenceType = (typeof EntryAnimationSequenceType)[number];
+const EntryAnimationSequenceType = ['fade', 'slide'] as const;
+export type TEntryFrameSequenceType = (typeof EntryAnimationSequenceType)[number];
 const EntryAnimationSequenceFadePropsOptions = ['out', 'in'] as const;
-type TEntryAnimationSequenceFadePropsOptions = (typeof EntryAnimationSequenceFadePropsOptions)[number];
+type TEntryFrameSequenceFadePropsOptions = (typeof EntryAnimationSequenceFadePropsOptions)[number];
 
-type TEntryAnimationSequenceFadeProps = {
-    type: 'fade'
-    mode: TEntryAnimationSequenceFadePropsOptions[number];
+type TEntryFrameSequenceFadeProps = {
+    type: 'fade';
+    mode: TEntryFrameSequenceFadePropsOptions[number];
     duration?: number;
     delay?: number;
     easing?: EasingFunction;
     useNativeDriver?: boolean;
 };
 
-type TEntryAnimationSequenceSlideProps = {
-    type: 'slide'
+type TEntryFrameSequenceSlideProps = {
+    type: 'slide';
     from?: (number | undefined)[];
     to?: (number | undefined)[];
     duration: number;
@@ -26,10 +25,10 @@ type TEntryAnimationSequenceSlideProps = {
     useNativeDriver?: boolean;
 };
 
-export type TEntryAnimationsSequences = (TEntryAnimationSequenceSlideProps | TEntryAnimationSequenceFadeProps)[]
+export type TEntryFrameSequences = (TEntryFrameSequenceSlideProps | TEntryFrameSequenceFadeProps)[];
 
-export type TEntryAnimationProps = {
-    sequences: TEntryAnimationsSequences;
+export type TEntryFrameProps = {
+    sequences: TEntryFrameSequences;
     disableChildrenWhenTerminated?: boolean;
     onStart?: Function;
     onFinish?: Function;
@@ -40,35 +39,35 @@ type TSequenceOptions = {
 };
 
 type TSequenceFade = {
-    type: 'fade'
+    type: 'fade';
     animation: Animated.TimingAnimationConfig;
     options?: TSequenceOptions;
     fromValue: number;
 };
 
 type TSequenceSlide = {
-    type: 'slide'
+    type: 'slide';
     animation: Animated.TimingAnimationConfig;
     options?: TSequenceOptions;
-    outputRangeY: [number,number],
-    outputRangeX: [number,number],
-}
+    outputRangeY: [number, number];
+    outputRangeX: [number, number];
+};
 
 type TSequence = TSequenceFade | TSequenceSlide;
 
-type TAnimationOptions= {
-    disableChildrenWhenTerminated: boolean; 
-    onStart: Function | null; 
-    onFinish: Function | null; 
-}
+type TFrameOptions = {
+    disableChildrenWhenTerminated: boolean;
+    onStart: Function | null;
+    onFinish: Function | null;
+};
 
-type TAnimation = {
-    options: TAnimationOptions
-    sequences: TSequence[]
-    sequencesLength: number
-}
+type TFrame = {
+    options: TFrameOptions;
+    sequences: TSequence[];
+    sequencesLength: number;
+};
 
-type TSequencer = TAnimation[] | [];
+type TSequencer = TFrame[] | [];
 
 type TStyles = {
     opacity?: Animated.Value;
@@ -78,7 +77,7 @@ type TStyles = {
 
 interface Props extends PropsWithChildren<any> {
     children: JSX.Element | undefined;
-    animations: TEntryAnimationProps[];
+    frames: TEntryFrameProps[];
     infinite?: boolean;
     disabled?: boolean;
 }
@@ -86,11 +85,42 @@ interface Props extends PropsWithChildren<any> {
 const defaultProps: Props = {
     children: undefined,
     infinite: false,
-    animations: [] as TEntryAnimationProps[],
+    frames: [] as TEntryFrameProps[],
     disabled: false,
+    restartAfterDisable: false,
 };
 
-const newFrameFade = (props: TEntryAnimationSequenceFadeProps): TSequenceFade => {
+        
+const initSequencer = (frames: TEntryFrameProps[]) : TSequencer => {
+    const preparedFrames = []
+    for (let [_, frame] of Object.entries(frames)) {
+        const AnimationFrame: TFrame = {
+            options: {
+                disableChildrenWhenTerminated: frame.disableChildrenWhenTerminated || false,
+                onStart: frame.onStart || null,
+                onFinish: frame.onFinish || null,
+            },
+            sequences: frame.sequences.map(
+                (e: TEntryFrameSequenceSlideProps | TEntryFrameSequenceFadeProps) =>
+                    prepareSequence(e) as TSequenceSlide | TSequenceFade,
+            ) as TSequence[],
+            sequencesLength: frame.sequences.length,
+        };
+        preparedFrames.push(AnimationFrame);
+
+    }
+    return preparedFrames
+}
+
+const prepareSequence = (sequence: TEntryFrameSequenceSlideProps | TEntryFrameSequenceFadeProps): TSequence => {
+    if (sequence.type === 'fade') {
+        return newFrameFade(sequence);
+    } else {
+        return newFrameSlide(sequence);
+    }
+};
+
+const newFrameFade = (props: TEntryFrameSequenceFadeProps): TSequenceFade => {
     const fromValue = props.mode === 'in' ? 0 : 1;
 
     return {
@@ -103,10 +133,10 @@ const newFrameFade = (props: TEntryAnimationSequenceFadeProps): TSequenceFade =>
             toValue: props.mode === 'in' ? 1 : 0,
             useNativeDriver: props.useNativeDriver || true,
         },
-    }
+    };
 };
 
-const newFrameSlide = (props: TEntryAnimationSequenceSlideProps): TSequenceSlide => {
+const newFrameSlide = (props: TEntryFrameSequenceSlideProps): TSequenceSlide => {
     let fromX, fromY, toX, toY;
     if (props.from) {
         fromX = props.from[0];
@@ -127,63 +157,30 @@ const newFrameSlide = (props: TEntryAnimationSequenceSlideProps): TSequenceSlide
             toValue: 1,
             useNativeDriver: props.useNativeDriver || true,
         },
-    }
+    };
 };
 
-const prepareSequence = (sequence: TEntryAnimationSequenceSlideProps | TEntryAnimationSequenceFadeProps): TSequence => {
-    if (sequence.type === 'fade') {
-        return newFrameFade(sequence);
-    } else {
-        return newFrameSlide(sequence);
-    } 
-}
+const BaseAnimationChain: React.FC<Props> = memo(({ children, frames, infinite, disabled, restartAfterDisable }: Props) => {
 
-const BaseAnimationChain: React.FC<Props> = memo(({ children, animations, infinite, disabled }: Props) => {
-    
-    const sequencer: TSequencer = [] as TAnimation[];
-    
+
+
+    const sequencer = useMemo(() => initSequencer(frames), []);
+
     const [styles, setStyles]: [TStyles, Dispatch<SetStateAction<{}>>] = useState({});
 
-    const [frame, setFrame]: [number, Dispatch<SetStateAction<number>>] = useState(0);
+    const [currentFrame, setCurrentFrame]: [number, Dispatch<SetStateAction<number>>] = useState(-1);
+    const [animationStarted, setAnimationStarted]: [number, Dispatch<SetStateAction<number>>] = useState(-1);
 
-    const opacityValue = new Animated.Value(0)
-    const movementValue = new Animated.Value(0)
-
-    const initSequencer = () => {
-        for (let [_, animation] of Object.entries(animations)) {
-            const AnimationFrame: TAnimation = {
-                options: {
-                    disableChildrenWhenTerminated: animation.disableChildrenWhenTerminated || false,
-                    onStart: animation.onStart || null,
-                    onFinish: animation.onFinish || null,
-                },
-                sequences: animation.sequences.map((e: TEntryAnimationSequenceSlideProps | TEntryAnimationSequenceFadeProps) => prepareSequence(e) as TSequenceSlide | TSequenceFade) as TSequence[],
-                sequencesLength: animation.sequences.length,
-            }
-            sequencer.push(AnimationFrame);
-        }
-        // console.log('inited');
-        return;
-    };
+    const opacityValue = new Animated.Value(0);
+    const movementValue = new Animated.Value(0);
 
 
-
-    const animate = (requestFrame: number = 0) => {
-        // console.log('Animate Frame '+requestFrame);
-        const frames = sequencer.length;
-
-        if (disabled) return;
-        if (requestFrame && requestFrame >= frames) {
-            if (!infinite) return;
-            else { setFrame(0); return }
-        }
-        if (requestFrame === undefined || !sequencer[requestFrame]) requestFrame = 0;
-
-        const Animation: TAnimation = sequencer[requestFrame];
+    const animate = useCallback(() => {
+        const Animation: TFrame = sequencer[currentFrame];
 
         let sequenceFinished = 0;
-        let sequences = Object.entries(sequencer[requestFrame].sequences)
-        let sequencesLength = sequences.length
+        let sequences = Object.entries(Animation.sequences);
+        let sequencesLength = sequences.length;
         let interpolatedAnimationY;
         let interpolatedAnimationX;
 
@@ -192,66 +189,78 @@ const BaseAnimationChain: React.FC<Props> = memo(({ children, animations, infini
         for (const [id, sequence] of sequences) {
             if (sequence.type === 'slide') {
                 movementValue.setValue(0);
-                
+
                 interpolatedAnimationY = movementValue.interpolate({
                     inputRange: [0, 1],
-                    outputRange: sequence.outputRangeY
-                })
+                    outputRange: sequence.outputRangeY,
+                });
                 interpolatedAnimationX = movementValue.interpolate({
                     inputRange: [0, 1],
-                    outputRange: sequence.outputRangeX
-                })
-                if (!infinite) setStyles({
-                    ...styles,
-                    translateX: interpolatedAnimationX,
-                    translateY: interpolatedAnimationY
-                })
-            }
-
-            else if (sequence.type === 'fade') {
+                    outputRange: sequence.outputRangeX,
+                });
+                if (!infinite)
+                    setStyles({
+                        ...styles,
+                        translateX: interpolatedAnimationX,
+                        translateY: interpolatedAnimationY,
+                    });
+            } else if (sequence.type === 'fade') {
                 opacityValue.setValue(sequence.fromValue);
-                if (!infinite) setStyles({
-                    ...styles,
-                    opacity: opacityValue,
-                })
+                if (!infinite)
+                    setStyles({
+                        ...styles,
+                        opacity: opacityValue,
+                    });
             }
 
-            if (infinite) setStyles({
-                opacity: opacityValue,
-                translateX: interpolatedAnimationX,
-                translateY: interpolatedAnimationY
-            })
+            if (infinite)
+                setStyles({
+                    opacity: opacityValue,
+                    translateX: interpolatedAnimationX,
+                    translateY: interpolatedAnimationY,
+                });
 
-            const timing = sequence.type === 'slide' ? movementValue
-            : sequence.type === 'fade' ? opacityValue
-            : movementValue;
+            const timing = sequence.type === 'slide' ? movementValue : sequence.type === 'fade' ? opacityValue : movementValue;
 
-            Animated.timing(timing, sequence.animation).start(() =>
-                {
-                    if (sequenceFinished < sequencesLength - 1) {
-                        sequenceFinished = sequenceFinished + 1;
-                        return;
-                    } else {
-                        if (Animation?.options?.onFinish) Animation.options.onFinish();
-                        return setFrame(requestFrame + 1);
-                    }
+            Animated.timing(timing, sequence.animation).start(() => {
+                if (sequenceFinished < sequencesLength - 1) {
+                    sequenceFinished = sequenceFinished + 1;
+                } else {
+                    if (Animation?.options?.onFinish) Animation.options.onFinish();
+                    setCurrentFrame(currentFrame + 1);
                 }
-            );
+            });
         }
-    };
+    }, [currentFrame]);
     
+    
+
 
     useEffect(() => {
-        if (!disabled) {
-            initSequencer();
-            animate(frame);
-        }
-    },[frame])
+            if (currentFrame >= frames.length) {
+                setAnimationStarted(-1);
+                if (infinite) setCurrentFrame(0);
+            }
+            else {
+                if (currentFrame === -1) {
+                    if (!disabled) {
+                        setCurrentFrame(0);
+                    }
+                }
+                else if (animationStarted !== currentFrame) {
+                    if (!disabled) {
+                        setAnimationStarted(currentFrame);
+                        animate();
+                    }
 
- 
-    
+                }
+            }
+    }, [currentFrame, disabled]);
+
+
     return <Animated.View style={[styles]}>{children}</Animated.View>;
-});
+
+},(prev, next) => (prev.disabled === next.disabled && prev.infinite === next.infinite));
 
 BaseAnimationChain.defaultProps = defaultProps;
 
