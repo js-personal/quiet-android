@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, Slice } from '@reduxjs/toolkit';
-import { MEM_STORAGE_UID } from '../../index.memory';
+import { MEM_STORAGE_UID } from '../../app.memory';
 
 export const appCheckpoints = {
     justInstalled: 1,

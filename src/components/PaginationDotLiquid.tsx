@@ -1,4 +1,4 @@
-import React from 'react';
+import { useRef } from 'react';
 import {
   Animated,
   Easing,
@@ -56,7 +56,7 @@ const LiquidLike = ({
     bigHeadScale: bigHeadScale || 1,
   };
   const inputRange = [0, width, width * 2];
-  const translateBack = React.useRef(new Animated.Value(0)).current;
+  const translateBack = useRef(new Animated.Value(0)).current;
   Animated.timing(translateBack, {
     toValue: scrollOffset.interpolate({
       inputRange: [0, width],

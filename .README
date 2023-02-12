@@ -4,3 +4,6 @@
 > npm config set script-shell "C:\\Program Files\\git\\bin\\bash.exe"
 revert :
 > npm config delete script-shell
+
+
+    "bundle": "./build.sh && react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/quiet.apk --assets-dest android/app/src/main/res && cd android && ./gradlew assembleRelease --warning-mode all"

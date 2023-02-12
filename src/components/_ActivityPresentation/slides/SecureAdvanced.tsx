@@ -1,15 +1,14 @@
-import React from 'react';
 import { Dimensions, View, SafeAreaView, StyleSheet, Text } from 'react-native';
-import RootCSS from '../../assets/root';
+import RootCSS from '@assets/root';
 
 
 
-export default function SecureInside() {
+export default function SecureAdvanced() {
 
 
     return (
         <View style={[ RootCSS.container ]}>
-            <Text>SecureInside</Text>
+            <Text>SecureAdvanced</Text>
         </View>
     );
 }

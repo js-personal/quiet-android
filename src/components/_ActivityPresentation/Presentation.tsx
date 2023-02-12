@@ -1,14 +1,12 @@
-import React, { Dispatch, SetStateAction, useCallback, useEffect, useState } from 'react';
-import { Dimensions, View } from 'react-native';
-import RootCSS from '../../assets/root';
+import { useState, memo, cloneElement } from 'react';
+import { Dimensions } from 'react-native';
 import { useTheme } from '@react-navigation/native';
 import BasePresentationSliders from '../BasePresentationSliders';
-import BaseSlide, { TEntrySlideProps } from '../BaseSlide';
-import Welcome from './Welcome';
-import SecureInside from './SecureInside';
-import SecureOutside from './SecureOutside';
-import SecureAdvanced from './SecureAdvanced';
-import AcceptCGU from './AcceptCGU';
+import BaseSlide from '../BaseSlide';
+import Welcome from './slides/Welcome';
+import SecureOutside from './slides/SecureOutside';
+import SecureAdvanced from './slides/SecureAdvanced';
+import AcceptCGU from './slides/AcceptCGU';
 
 const { width, height } = Dimensions.get('window');
 
@@ -20,17 +18,16 @@ type TSlide = {
 type TSlides = TSlide[]
 
 
-const Slide = React.memo(({ children, index, active } : { children: JSX.Element, index: number, active?: number }) => {
-    console.log('create slide',index,);
-    console.log(index);
-    console.log(active);
-    console.log(active === index)
+const Slide = memo(({ children, index, active } : { children: JSX.Element, index: number, active?: number }) => {
+    const child = cloneElement(children, {enable: active === index}, null);
+    console.log('Re-render slide : '+ index);
+    console.log('> active: '+ (active === index ? 'true': 'false'))
     return <BaseSlide
                 width={width}
                 height={height}
-                active={active === index}
+                active={false}
                 index={index}
-                children={children}
+                children={child}
             />
 }, (prev, next) => {
     return ((prev.active === prev.index) === (next.active === next.index));

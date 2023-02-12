@@ -1,6 +1,6 @@
-import { indexOf, isEqual } from 'lodash';
-import { Dispatch, PropsWithChildren, SetStateAction, useEffect, useRef, useState } from 'react';
-import { StyleSheet, View, Animated, Easing, EasingStatic, EasingFunction, Text } from 'react-native';
+
+import { Dispatch, memo, PropsWithChildren, SetStateAction, useEffect, useRef, useState } from 'react';
+import { Animated, Easing, EasingFunction } from 'react-native';
 
 const EntryAnimationSequenceType = ['fade','slide'] as const;
 type TEntryAnimationSequenceType = (typeof EntryAnimationSequenceType)[number];
@@ -138,16 +138,14 @@ const prepareSequence = (sequence: TEntryAnimationSequenceSlideProps | TEntryAni
     } 
 }
 
-const BaseAnimationChain: React.FC<Props> = ({ children, animations, infinite, disabled }: Props) => {
+const BaseAnimationChain: React.FC<Props> = memo(({ children, animations, infinite, disabled }: Props) => {
     
     const sequencer: TSequencer = [] as TAnimation[];
     
     const [styles, setStyles]: [TStyles, Dispatch<SetStateAction<{}>>] = useState({});
-    const [enable, setEnable]: [boolean, Dispatch<SetStateAction<boolean>>] = useState(true);
 
     const [frame, setFrame]: [number, Dispatch<SetStateAction<number>>] = useState(0);
 
-    const isDisabled = useRef(disabled)
     const opacityValue = new Animated.Value(0)
     const movementValue = new Animated.Value(0)
 
@@ -174,13 +172,12 @@ const BaseAnimationChain: React.FC<Props> = ({ children, animations, infinite, d
         // console.log('Animate Frame '+requestFrame);
         const frames = sequencer.length;
 
-        if (isDisabled.current) return;
+        if (disabled) return;
         if (requestFrame && requestFrame >= frames) {
             if (!infinite) return;
             else { setFrame(0); return }
         }
         if (requestFrame === undefined || !sequencer[requestFrame]) requestFrame = 0;
-        if (!enable) setEnable(true);
 
         const Animation: TAnimation = sequencer[requestFrame];
 
@@ -245,14 +242,16 @@ const BaseAnimationChain: React.FC<Props> = ({ children, animations, infinite, d
     
 
     useEffect(() => {
-        if (!isDisabled.current) {
+        if (!disabled) {
             initSequencer();
             animate(frame);
         }
     },[frame])
+
+ 
     
-    return <Animated.View style={[styles]}>{enable ? children : null}</Animated.View>;
-};
+    return <Animated.View style={[styles]}>{children}</Animated.View>;
+});
 
 BaseAnimationChain.defaultProps = defaultProps;
 

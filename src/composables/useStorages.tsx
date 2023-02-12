@@ -1,5 +1,5 @@
 import { MMKV } from 'react-native-mmkv'
-import {name as appName} from '../app.json';
+import {name as appName} from '../../app.json';
 import base64 from 'react-native-base64'
 
 let MMKVPerm: MMKV;

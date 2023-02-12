@@ -1,4 +1,3 @@
-import type { TDevice } from '../../composables/useDevice';
 import useDevice from '../../composables/useDevice';
 import useStorages from '../../composables/useStorages';
 

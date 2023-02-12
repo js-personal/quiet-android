@@ -1,6 +1,5 @@
-import React from 'react';
-import { useRef, useState } from 'react';
-import { StyleSheet, View, FlatList, NativeScrollEvent, Animated, NativeSyntheticEvent } from 'react-native';
+import { memo, useRef } from 'react';
+import { StyleSheet, View, NativeScrollEvent, Animated } from 'react-native';
 import BaseAnimationChain, { TEntryAnimationProps } from './BaseAnimationChain';
 import PaginationDotLiquid from './PaginationDotLiquid';
 
@@ -24,9 +23,9 @@ type BasePresentationSlidersProps = {
     onChangeSlide?: (id: number | undefined) => void;
 };
 
+    
 
-
-export default React.memo(function BasePresentationSliders(props: BasePresentationSlidersProps) {
+export default memo(function BasePresentationSliders(props: BasePresentationSlidersProps) {
 
     const { slides, slideWidth } = props;
     const scrollX = useRef(new Animated.Value(0)).current;

@@ -2,7 +2,7 @@ import { StyleSheet, Text, View, Pressable } from 'react-native';
 import { Icon } from 'react-native-elements';
 import GlobalCSS from '../assets/root';
 
-export default function BaseHeader({ navigation, title, back, backTitle, backNavigate, backgroundColor }) {
+export default function BaseHeader({ navigation, title, backTitle, backNavigate, backgroundColor }) {
     return (
         <View
             style={[

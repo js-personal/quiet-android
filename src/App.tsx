@@ -9,7 +9,7 @@ import ActivityPresentation from './activities/ActivityPresentation';
 import { appCheckpoints } from './stores/app/appSlice';
 import preparePermanentDatas from './actions/app/preparePermanentDatas';
 import installPermanentDatas from './actions/app/installPermanentDatas';
-import { MEM_STORAGE_UID } from './index.memory';
+import { MEM_STORAGE_UID } from './app.memory';
 import { ThemeDark, ThemeLight } from './assets/themes';
 
 export default function App() {

@@ -1,11 +1,11 @@
 import { useTheme } from '@react-navigation/native';
 import { StyleSheet, View, Text, Image, Easing } from 'react-native';
-import RootCSS from '../../assets/root';
-import { CustomTheme } from '../../assets/themes';
+import RootCSS from '@assets/root';
+import { CustomTheme } from '@assets/themes';
 
-import useTranslation from '../../composables/useTranslation';
+import useTranslation from '@composables/useTranslation';
 
-import BaseAnimationChain, { TEntryAnimationProps } from '../BaseAnimationChain';
+import BaseAnimationChain, { TEntryAnimationProps } from '@components/BaseAnimationChain';
 
 type Props = {
     onFinishAnimation?: Function;
@@ -20,13 +20,13 @@ export default function Welcome(props: Props) {
     
     switch (true) {
         case theme.name === 'light':
-            linkImageTouchHand = require('../../assets/img/touch-screen-line-light.png');
+            linkImageTouchHand = require('@assets/img/touch-screen-line-light.png');
             break;
         case theme.name === 'dark':
-            linkImageTouchHand = require('../../assets/img/touch-screen-line-dark.png');
+            linkImageTouchHand = require('@assets/img/touch-screen-line-dark.png');
             break;
     }
-
+    console.log('rerender WELCOME :'+enabled);
     const animationSequencesTextWelcome: TEntryAnimationProps[] = [
         {
             sequences: [
@@ -200,7 +200,7 @@ export default function Welcome(props: Props) {
             <BaseAnimationChain animations={animationSequencesCtnLogo} disabled={!enabled}>
                 <View style={styles.logoContainer}>
                     <BaseAnimationChain animations={animationSequencesLogoImage} disabled={!enabled}>
-                        <Image source={require('../../assets/img/logo.png')} style={styles.logo} />
+                        <Image source={require('@assets/img/logo.png')} style={styles.logo} />
                     </BaseAnimationChain>
                     <BaseAnimationChain animations={animationSequencesLogoTitle} disabled={!enabled}>
                         <Text style={styles.textApp}>Quiet</Text>

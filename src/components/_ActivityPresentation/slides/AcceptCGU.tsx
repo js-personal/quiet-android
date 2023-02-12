@@ -1,5 +1,5 @@
 import { View, Text } from 'react-native';
-import RootCSS from '../../assets/root';
+import RootCSS from '@assets/root';
 
 
 
