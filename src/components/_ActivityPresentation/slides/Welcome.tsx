@@ -40,7 +40,7 @@ export default memo((props: Props) => {
                 },
                 {
                     type: 'slide',
-                    from: [0, -20],
+                    from: [0, -100],
                     duration: 1000,
                     delay: 0,
                     easing: Easing.out(Easing.exp),
@@ -134,9 +134,9 @@ export default memo((props: Props) => {
                     duration: 1200,
                     delay: 5500,
                     easing: Easing.out(Easing.linear),
-                },
+                }
             ],
-            onFinish: props.onFinishAnimation
+            onFinish: props.onFinishAnimation,
         },
     ];
 
@@ -154,7 +154,7 @@ export default memo((props: Props) => {
         },
     ];
 
-    const framesSlideTouchHand:TEntryFrameProps[] = [
+    const framesSlideTouchHand: TEntryFrameProps[] = [
         {
             sequences: [
                 {
@@ -187,7 +187,7 @@ export default memo((props: Props) => {
                 },
             ],
         },
-    ]
+    ];
 
     return (
         <View style={[RootCSS.container, RootCSS.justifyCenter, RootCSS.alignCenter]}>

@@ -22,6 +22,8 @@ module.exports = function (api) {
                         '@plugins': './src/plugins',
                         '@stores': './src/stores',
                         '@sockets': './src/sockets',
+                        '@helpers': './src/app.helpers.ts',
+                        '@helpers-dev': './src/app.helpers.dev.ts',
                     },
                 },
             ],

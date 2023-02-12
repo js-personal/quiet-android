@@ -128,7 +128,7 @@ export default memo(function BasePresentationSliders(props: BasePresentationSlid
             {renderPagination}
         </>
     );
-})
+}, (prev, next) => (prev.paginationEnabled === next.paginationEnabled && prev.slides === next.slides));
 
 const styles = StyleSheet.create({
     flatlist: {

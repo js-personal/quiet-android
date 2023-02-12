@@ -34,7 +34,9 @@
             ],
             "@sockets/*": [
                 "./src/sockets/*"
-            ]
+            ],
+            "@helpers'": ["./src/app.helpers"],
+            "@helpers-dev": ["./src/app.helpers.dev.ts"]
         }
     }
 }

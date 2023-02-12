@@ -1,3 +1,4 @@
+import { my } from '@helpers-dev';
 import useDevice from '@composables/useDevice';
 import useStorages from '@composables/useStorages';
 
@@ -11,7 +12,7 @@ export default async () => {
     const qID = await device.getQID()
     const MMKVPerm = useStorages.runMMKVPerm(qID);
     if (FORCE_REFRESH_MMKV_PERMANENT) {
-        console.warn('DevNote: MMKV force refresh by ./app.config');
+        my.warn('DevNote: MMKV force refresh by ./app.config');
         MMKVPerm.getAllKeys().forEach((key) => {
             MMKVPerm.delete(key);
         })
