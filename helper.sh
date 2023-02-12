@@ -7,7 +7,7 @@ if [ $1 = '--reset-modules' ]; then
     echo "[Helper.SH] Deleting node_modules files ..."
     # Supprimer le fichier quiet.android.bundle
 
-    rm -r node_modules 2>/dev/null
+    sed -i -e '/node_modules/d' 2>/dev/null
 
     echo "[Helper.SH] Files sucessfully deleted !"
 
@@ -26,16 +26,15 @@ elif [ $1 = '--reset-android' ]; then
     do
         if [ -d "$file" ]; then
             echo "> Deleting file $file ..."
-            rm -r "$file" 2>/dev/null
+            sed -i -e "/$file/d" 2>/dev/null
 
         elif [ -f "$file" ]; then
             echo "> Deleting directory $file ..."
-            rm "$file" 2>/dev/null
+            sed -i -e "/$file/d" 2>/dev/null
         else
             echo "> File or directory does not exist: $file"
         fi
     done
-    # Supprimer les dossiers qui commencent par drawable- dans le chemin android/app/src/main/res
     # Supprimer les dossiers qui commencent par drawable- dans le chemin android/app/src/main/res
     for dir in android/app/src/main/res/drawable-*
     do

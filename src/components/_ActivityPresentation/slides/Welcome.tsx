@@ -6,13 +6,14 @@ import { CustomTheme } from '@assets/themes';
 import useTranslation from '@composables/useTranslation';
 
 import BaseAnimationChain, { TEntryAnimationProps } from '@components/BaseAnimationChain';
+import { memo } from 'react';
 
 type Props = {
     onFinishAnimation?: Function;
     enable?: boolean;
 };
 
-export default function Welcome(props: Props) {
+export default memo((props: Props) => {
     const { translate } = useTranslation();
     const theme = useTheme() as CustomTheme;
     const enabled = props.enable !== undefined ? props.enable : true;
@@ -26,7 +27,7 @@ export default function Welcome(props: Props) {
             linkImageTouchHand = require('@assets/img/touch-screen-line-dark.png');
             break;
     }
-    console.log('rerender WELCOME :'+enabled);
+
     const animationSequencesTextWelcome: TEntryAnimationProps[] = [
         {
             sequences: [
@@ -221,7 +222,7 @@ export default function Welcome(props: Props) {
             </BaseAnimationChain>
         </View>
     );
-}
+});
 
 const styles = StyleSheet.create({
     textWelcome: {

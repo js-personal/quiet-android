@@ -1,11 +1,12 @@
-import { memo, useRef } from 'react';
-import { StyleSheet, View, NativeScrollEvent, Animated } from 'react-native';
+import { cloneElement, ComponentType, FunctionComponentElement, memo, useCallback, useRef, useMemo } from 'react';
+import { StyleSheet, View, NativeScrollEvent, Animated, NativeSyntheticEvent } from 'react-native';
+import { ClipPath } from 'react-native-svg';
 import BaseAnimationChain, { TEntryAnimationProps } from './BaseAnimationChain';
 import PaginationDotLiquid from './PaginationDotLiquid';
 
 type TSlide = {
     name: string;
-    component: JSX.Element;
+    component: FunctionComponentElement<any>;
     paginationDisabled?: boolean;
 };
 
@@ -22,51 +23,71 @@ type BasePresentationSlidersProps = {
     paginationDisappearSequences?: TEntryAnimationProps[];
     onChangeSlide?: (id: number | undefined) => void;
 };
+type TPaginationMemoProps = {
+    paginationEnabled ?: boolean;
+    slides: TSlides;
+    scrollX: Animated.Value;
+    scrollOffset: Animated.Value
+}
+
+const Pagination = memo((props: TPaginationMemoProps) => {
+    return (
+        <View style={styles.dotCtn}>
+            {props.paginationEnabled && (
+                <PaginationDotLiquid
+                    data={props.slides}
+                    scrollX={props.scrollX}
+                    scrollOffset={props.scrollOffset}
+                    dotSize={8}
+                    activeDotColor={'#687dfa'}
+                    inActiveDotColor={'black'}
+                    inActiveDotOpacity={0.3}
+                    marginHorizontal={2}
+                    strokeWidth={4}
+                    bigHeadScale={0.8}
+                />
+            )}
+        </View>
+    );
+}, (prev, next) => (prev.paginationEnabled === next.paginationEnabled));
 
     
+const renderSlide = ({ item }: { item: TSlide }) => {
+    return item.component;
+}
 
 export default memo(function BasePresentationSliders(props: BasePresentationSlidersProps) {
 
-    const { slides, slideWidth } = props;
+    const { slides, slideWidth, slideHeight } = props;
     const scrollX = useRef(new Animated.Value(0)).current;
     let scrollOffset = useRef(new Animated.Value(0)).current;
-    let slideIndex = useRef(0).current;
-
-    const renderSlide = ({ item }: { item: TSlide }) => item.component;
-
-    const Pagination = () => {
-        return (
-            <View style={styles.dotCtn}>
-                {props.paginationEnabled && (
-                    <PaginationDotLiquid
-                        data={slides}
-                        scrollX={scrollX}
-                        scrollOffset={scrollOffset}
-                        dotSize={8}
-                        activeDotColor={'#687dfa'}
-                        inActiveDotColor={'black'}
-                        inActiveDotOpacity={0.3}
-                        marginHorizontal={2}
-                        strokeWidth={4}
-                        bigHeadScale={0.8}
-                    />
-                )}
-            </View>
-        );
-    };
-
     
-    const onScroll = ({ nativeEvent } : { nativeEvent: NativeScrollEvent }) => { 
+    console.log('# Render BasePresentationSliders');
 
-        const i = Math.round(nativeEvent.contentOffset.x / slideWidth);
+
+    const onScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+        const x = event.nativeEvent.contentOffset.x;
+        scrollX.setValue(x);
+    }, [])
+    
+    const onScrollMomentumEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => { 
+        const x = event.nativeEvent.contentOffset.x;
+        scrollOffset.setValue(x);
+        const i = Math.round(x / slideWidth);
         props.onChangeSlide ? props.onChangeSlide(i) : null;
-    
     }
 
-    const renderPagination = () => {
+    const renderPagination = useMemo(() => {
         const animationRequested = props.paginationAppearSequences || props.paginationDisappearSequences;
+        const paginationProps: TPaginationMemoProps = {
+            slides: slides,
+            scrollX: scrollX,
+            scrollOffset: scrollOffset,
+            paginationEnabled: props.paginationEnabled,
+        }
+        const PaginationMemo = <Pagination {...paginationProps} />;
         if (!animationRequested) {
-            return <Pagination />;
+            return PaginationMemo;
         } else {
             const animation: TEntryAnimationProps[] | undefined = props.paginationEnabled && props.paginationAppearSequences 
             ? props.paginationAppearSequences
@@ -75,12 +96,20 @@ export default memo(function BasePresentationSliders(props: BasePresentationSlid
             if (animation)
                 return (
                     <BaseAnimationChain animations={ animation }>
-                        <Pagination />
+                      {PaginationMemo}
                     </BaseAnimationChain>
                 );
-            else return <Pagination />;
+            else return PaginationMemo
         }
-    };
+    },[props.paginationEnabled])
+
+    const getItemLayout = useCallback((_: TSlide[] | null | undefined, index: number) => {
+        return {
+            length: slideHeight,
+            offset: slideHeight * index,
+            index,
+        };
+    }, [slideHeight]);
 
     return (
         <>
@@ -90,19 +119,14 @@ export default memo(function BasePresentationSliders(props: BasePresentationSlid
                 showsHorizontalScrollIndicator={false}
                 pagingEnabled={true}
                 renderItem={renderSlide}
-                // onScroll={onScroll}
                 keyExtractor={item => item.name}
                 style={styles.flatlist}
-                onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
-                    useNativeDriver: true,
-                })}
-
-                onMomentumScrollEnd={Animated.event([{ nativeEvent: { contentOffset: { x: scrollOffset } } }], {
-                    useNativeDriver: false,
-                    listener: onScroll
-                })}
+                onScroll={onScroll}
+                getItemLayout={getItemLayout}
+                onMomentumScrollEnd={onScrollMomentumEnd}
+                
             />
-            {renderPagination()}
+            {renderPagination}
         </>
     );
 })
@@ -112,7 +136,6 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
     },
     dotCtn: {
-        // flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
         width: '100%',

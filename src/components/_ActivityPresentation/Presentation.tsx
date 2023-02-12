@@ -1,9 +1,11 @@
-import { useState, memo, cloneElement } from 'react';
+import React from 'react';
+import { useState, useMemo, memo, cloneElement } from 'react';
 import { Dimensions } from 'react-native';
 import { useTheme } from '@react-navigation/native';
 import BasePresentationSliders from '../BasePresentationSliders';
 import BaseSlide from '../BaseSlide';
 import Welcome from './slides/Welcome';
+import SecureInside from './slides/SecureInside';
 import SecureOutside from './slides/SecureOutside';
 import SecureAdvanced from './slides/SecureAdvanced';
 import AcceptCGU from './slides/AcceptCGU';
@@ -20,8 +22,8 @@ type TSlides = TSlide[]
 
 const Slide = memo(({ children, index, active } : { children: JSX.Element, index: number, active?: number }) => {
     const child = cloneElement(children, {enable: active === index}, null);
-    console.log('Re-render slide : '+ index);
-    console.log('> active: '+ (active === index ? 'true': 'false'))
+    // console.log('Re-render slide : '+ index);
+    // console.log('> active: '+ (active === index ? 'true': 'false'))
     return <BaseSlide
                 width={width}
                 height={height}
@@ -36,8 +38,7 @@ const Slide = memo(({ children, index, active } : { children: JSX.Element, index
 
 export default function Presentation() {
     const Theme = useTheme();
-    const [ viewPagination, setViewPagination ] = useState(true);
-    // const [ slides, setSlides ]: [TSlides, Dispatch<SetStateAction<TSlides>>] = useState([] as TSlides);
+    const [ viewPagination, setViewPagination ] = useState(false);
     const [ activeSlide, setActiveSlide ] = useState(0);
 
     const enablePagination = () => {
@@ -48,7 +49,9 @@ export default function Presentation() {
         if (index !== undefined && index !== activeSlide) setActiveSlide(index);
     }
 
-    const slides = 
+    console.log('RERENDER Présentation');
+    const slides =
+     useMemo(() => ( 
         [
             {
                 name: 'welcome',
@@ -56,7 +59,7 @@ export default function Presentation() {
             },
             {
                 name: 'secure-from-inside',
-                component: <Slide index={1} active={activeSlide}><Welcome/></Slide>,
+                component: <Slide index={1} active={activeSlide}><SecureInside /></Slide>,
             },
             {
                 name: 'secure-from-outside',
@@ -71,33 +74,7 @@ export default function Presentation() {
                 component: <Slide index={4} active={activeSlide}><AcceptCGU /></Slide>,
             },
     ]
-    
-    // useEffect(() => {
-    //     setSlides(
-    //     [
-    //             {
-    //                 name: 'welcome',
-    //                 component: <Slide index={0}><Welcome onFinishAnimation={enablePagination} /></Slide>,
-    //             },
-    //             {
-    //                 name: 'secure-from-inside',
-    //                 component: <Slide index={1}><Welcome/></Slide>,
-    //             },
-    //             {
-    //                 name: 'secure-from-outside',
-    //                 component: <Slide index={2}><SecureOutside /></Slide>,
-    //             },
-    //             {
-    //                 name: 'secure-advanced',
-    //                 component: <Slide index={3}><SecureAdvanced /></Slide>,
-    //             },
-    //             {
-    //                 name: 'continue-accept-cgu',
-    //                 component: <Slide index={4}><AcceptCGU /></Slide>,
-    //             },
-    //         ]
-    //     )
-    // },[activeSlide])
+    ), [activeSlide]);
     
 
     return <BasePresentationSliders
