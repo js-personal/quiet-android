@@ -1,16 +1,17 @@
-import { useEffect, useContext, useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { useColorScheme, StyleSheet, Text, View, Image } from 'react-native';
+import { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
+import { useColorScheme, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 const Stack = createNativeStackNavigator();
-import useTranslation from './composables/useTranslation';
-import ActivityPresentation from './activities/ActivityPresentation';
-import { appCheckpoints } from './stores/app/appSlice';
-import preparePermanentDatas from './actions/app/preparePermanentDatas';
-import installPermanentDatas from './actions/app/installPermanentDatas';
+import useTranslation from '@composables/useTranslation';
+import ActivityPresentation from '@activities/ActivityPresentation';
+import { appCheckpoints } from '@stores/app/appSlice';
+import preparePermanentDatas from '@actions/app/preparePermanentDatas';
+import installPermanentDatas from '@actions/app/installPermanentDatas';
 import { MEM_STORAGE_UID } from './app.memory';
-import { ThemeDark, ThemeLight } from './assets/themes';
+import { ThemeDark, ThemeLight } from '@assets/themes';
+import useDevice from '@composables/useDevice';
 
 export default function App() {
     const { loadI18nLanguage } = useTranslation();
@@ -29,7 +30,9 @@ export default function App() {
         if (!storePersistentReady) {
             preparePermanentDatas();
         } else {
-            if (!permanentUniqID) installPermanentDatas();
+            if (!permanentUniqID) {
+                installPermanentDatas();
+            }
             loadI18nLanguage(language);
             if (checkpoint === appCheckpoints.justInstalled) {
                 setIsRequestingPresentation(true);

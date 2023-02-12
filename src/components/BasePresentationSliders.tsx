@@ -1,6 +1,5 @@
-import { cloneElement, ComponentType, FunctionComponentElement, memo, useCallback, useRef, useMemo } from 'react';
+import { FunctionComponentElement, memo, useCallback, useRef, useMemo } from 'react';
 import { StyleSheet, View, NativeScrollEvent, Animated, NativeSyntheticEvent } from 'react-native';
-import { ClipPath } from 'react-native-svg';
 import BaseAnimationChain, { TEntryAnimationProps } from './BaseAnimationChain';
 import PaginationDotLiquid from './PaginationDotLiquid';
 
@@ -51,7 +50,7 @@ const Pagination = memo((props: TPaginationMemoProps) => {
     );
 }, (prev, next) => (prev.paginationEnabled === next.paginationEnabled));
 
-    
+
 const renderSlide = ({ item }: { item: TSlide }) => {
     return item.component;
 }

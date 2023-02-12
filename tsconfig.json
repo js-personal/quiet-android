@@ -9,15 +9,20 @@
             "@assets/*": [
                 "./src/assets/*"
             ],
-            "@action/*": [
+            "@actions/*": [
                 "./src/actions/*"
             ],
+            "@activities/*": [
+                "./src/activities/*"
+            ],
+            "@config": ["./src/app.config.ts"],
             "@components/*": [
                 "./src/components/*"
             ],
             "@composables/*": [
                 "./src/composables/*"
             ],
+            "@memory": ["./src/app.memory.ts"],
             "@langs/*": [
                 "./src/langs/*"
             ],

@@ -7,12 +7,13 @@ let MMKVUsers: MMKV;
 
 export default {
     //MMKV Connectors
-    runMMKVPerm(key: string) {
+    runMMKVPerm(qID: string) {
         if (!MMKVPerm)
             MMKVPerm = new MMKV({
                 id: `${appName}-storage-permanent`,
-                encryptionKey: base64.encode(key)
+                encryptionKey: base64.encode(qID)
             })
+        return MMKVPerm;
     },
     runMMKVUsers(deviceId: string, userId: string) {
         if (!MMKVUsers)
@@ -21,6 +22,7 @@ export default {
                 path: `/s-${userId}`,
                 encryptionKey: base64.encode(deviceId)
             })
+        return MMKVUsers;
     },
     getMMKVPerm: () => (MMKVPerm),
     getMMKVUsers: () => (MMKVUsers),

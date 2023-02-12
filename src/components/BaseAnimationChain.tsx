@@ -3,7 +3,7 @@ import { Dispatch, memo, PropsWithChildren, SetStateAction, useEffect, useRef, u
 import { Animated, Easing, EasingFunction } from 'react-native';
 
 const EntryAnimationSequenceType = ['fade','slide'] as const;
-type TEntryAnimationSequenceType = (typeof EntryAnimationSequenceType)[number];
+export type TEntryAnimationSequenceType = (typeof EntryAnimationSequenceType)[number];
 const EntryAnimationSequenceFadePropsOptions = ['out', 'in'] as const;
 type TEntryAnimationSequenceFadePropsOptions = (typeof EntryAnimationSequenceFadePropsOptions)[number];
 
@@ -36,7 +36,7 @@ export type TEntryAnimationProps = {
 };
 
 type TSequenceOptions = {
-    // disableChildrenWhenTerminated?: boolean;
+    //DevNote create laters;
 };
 
 type TSequenceFade = {
