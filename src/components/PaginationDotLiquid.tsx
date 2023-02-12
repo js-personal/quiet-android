@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { memo, useRef } from 'react';
 import {
   Animated,
   Easing,
@@ -27,7 +27,7 @@ export interface LiquidLikeProps {
 
 const AnimatedLine = Animated.createAnimatedComponent(Line);
 const AnimatedSvg = Animated.createAnimatedComponent(Svg);
-const LiquidLike = ({
+const LiquidLike = memo(({
   scrollX,
   data,
   dotSize,
@@ -157,7 +157,8 @@ const LiquidLike = ({
       </AnimatedSvg>
     </View>
   );
-};
+}, () =>true)
+
 
 const styles = StyleSheet.create({
   

@@ -18,7 +18,7 @@ export default memo((props: Props) => {
     const theme = useTheme() as CustomTheme;
     const enabled = props.enable !== undefined ? props.enable : true;
     let linkImageTouchHand;
-
+    // console.log('Render slide Welcome');
     switch (true) {
         case theme.name === 'light':
             linkImageTouchHand = require('@assets/img/touch-screen-line-light.png');

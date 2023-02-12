@@ -1,6 +1,6 @@
-import React from 'react';
+
 import { useState, useMemo, memo, cloneElement } from 'react';
-import { Dimensions } from 'react-native';
+import { Dimensions, Easing } from 'react-native';
 import { useTheme } from '@react-navigation/native';
 import BasePresentationSliders from '@components/BasePresentationSliders';
 import BaseSlide from '@components/BaseSlide';
@@ -20,19 +20,19 @@ type TSlide = {
 type TSlides = TSlide[]
 
 
-const Slide = memo(({ children, index, active } : { children: JSX.Element, index: number, active?: number }) => {
-    const child = cloneElement(children, {enable: active === index}, null);
+const Slide = memo(({ children, index, activeSlide } : { children: JSX.Element, index: number, activeSlide?: number }) => {
+    const child = cloneElement(children, {enable: activeSlide === index}, null);
     // console.log('Re-render slide : '+ index);
     // console.log('> active: '+ (active === index ? 'true': 'false'))
     return <BaseSlide
                 width={width}
                 height={height}
-                active={false}
+                active={activeSlide === index}
                 index={index}
                 children={child}
             />
 }, (prev, next) => {
-    return ((prev.active === prev.index) === (next.active === next.index));
+    return ((prev.activeSlide === prev.index) === (next.activeSlide === next.index));
 })
 
 
@@ -40,6 +40,7 @@ export default function Presentation() {
     const Theme = useTheme();
     const [ viewPagination, setViewPagination ] = useState(false);
     const [ activeSlide, setActiveSlide ] = useState(0);
+    // console.log('Render: Presentation ###############################');
 
     const enablePagination = () => {
         if (!viewPagination) setViewPagination(true);
@@ -49,29 +50,28 @@ export default function Presentation() {
         if (index !== undefined && index !== activeSlide) setActiveSlide(index);
     }
 
-    console.log('RERENDER Présentation');
     const slides =
      useMemo(() => ( 
         [
             {
                 name: 'welcome',
-                component: <Slide index={0} active={activeSlide}><Welcome onFinishAnimation={enablePagination} /></Slide>,
+                component: <Slide index={0} activeSlide={activeSlide}><Welcome onFinishAnimation={enablePagination} /></Slide>,
             },
             {
                 name: 'secure-from-inside',
-                component: <Slide index={1} active={activeSlide}><Welcome /></Slide>,
+                component: <Slide index={1} activeSlide={activeSlide}><Welcome /></Slide>,
             },
             {
                 name: 'secure-from-outside',
-                component: <Slide index={2} active={activeSlide}><SecureOutside /></Slide>,
+                component: <Slide index={2} activeSlide={activeSlide}><SecureOutside /></Slide>,
             },
             {
                 name: 'secure-advanced',
-                component: <Slide index={3} active={activeSlide}><SecureAdvanced /></Slide>,
+                component: <Slide index={3} activeSlide={activeSlide}><SecureAdvanced /></Slide>,
             },
             {
                 name: 'continue-accept-cgu',
-                component: <Slide index={4} active={activeSlide}><AcceptCGU /></Slide>,
+                component: <Slide index={4} activeSlide={activeSlide}><AcceptCGU /></Slide>,
             },
     ]
     ), [activeSlide]);
@@ -89,6 +89,7 @@ export default function Presentation() {
                         type: 'slide',
                         from: [0, 200],
                         duration: 1000,
+                        easing: Easing.out(Easing.exp)
                     }
                 ]
             }

@@ -11,7 +11,7 @@ type TSlide = {
 
 type TSlides = TSlide[];
 
-type BasePresentationSlidersProps = {
+type TBasePresentationSlidersProps = {
     slides: TSlides;
     slideWidth: number;
     slideHeight: number;
@@ -55,14 +55,12 @@ const renderSlide = ({ item }: { item: TSlide }) => {
     return item.component;
 }
 
-export default memo(function BasePresentationSliders(props: BasePresentationSlidersProps) {
 
+export default memo(function BasePresentationSliders(props: TBasePresentationSlidersProps) {
+    // console.log('Render: BasePresentationSliders');
     const { slides, slideWidth, slideHeight } = props;
     const scrollX = useRef(new Animated.Value(0)).current;
     let scrollOffset = useRef(new Animated.Value(0)).current;
-    
-    console.log('# Render BasePresentationSliders');
-
 
     const onScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
         const x = event.nativeEvent.contentOffset.x;
@@ -128,7 +126,9 @@ export default memo(function BasePresentationSliders(props: BasePresentationSlid
             {renderPagination}
         </>
     );
-}, (prev, next) => (prev.paginationEnabled === next.paginationEnabled && prev.slides === next.slides));
+});
+
+
 
 const styles = StyleSheet.create({
     flatlist: {

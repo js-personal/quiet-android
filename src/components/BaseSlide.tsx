@@ -1,4 +1,4 @@
-import React from 'react';
+import {memo} from 'react';
 import { StyleSheet, View } from 'react-native';
 
 export type TEntrySlideEvents = {
@@ -13,17 +13,16 @@ export type TEntrySlideProps = {
     active?: boolean
 } 
 
-export default function BaseSlide(props: TEntrySlideProps) {
+const BaseSlide = memo((props: TEntrySlideProps) => {
     const { width, height, children } = props;
+    // console.log('Render: BaseSlide');
+
     return (
-        <View style={[{ width: width, height: height }, styles.slide]}>
+        <View style={[{ width: width, height: height }]}>
             { children }
         </View>
-    );
-}
+    )
+})
 
-const styles = StyleSheet.create({
-    slide: {
-        // alignItems:'center'
-    }
-});
+
+export default BaseSlide;
