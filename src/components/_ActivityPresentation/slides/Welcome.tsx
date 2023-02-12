@@ -191,7 +191,6 @@ export default memo((props: Props) => {
 
     return (
         <View style={[RootCSS.container, RootCSS.justifyCenter, RootCSS.alignCenter]}>
-            <Text>ENABLED : {enabled ? 'true' : 'false' }</Text>
             <BaseAnimationChain frames={framesTextWelcome} disabled={!enabled} restartAfterDisable={true}>
                 <Text style={styles.textWelcome}>{translate('w.welcome')}</Text>
             </BaseAnimationChain>

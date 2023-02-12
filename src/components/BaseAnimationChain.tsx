@@ -162,14 +162,13 @@ const newFrameSlide = (props: TEntryFrameSequenceSlideProps): TSequenceSlide => 
 
 const BaseAnimationChain: React.FC<Props> = memo(({ children, frames, infinite, disabled, restartAfterDisable }: Props) => {
 
-
-
     const sequencer = useMemo(() => initSequencer(frames), []);
 
-    const [styles, setStyles]: [TStyles, Dispatch<SetStateAction<{}>>] = useState({});
+    const [ styles, setStyles ]: [TStyles, Dispatch<SetStateAction<{}>>] = useState({});
 
-    const [currentFrame, setCurrentFrame]: [number, Dispatch<SetStateAction<number>>] = useState(-1);
-    const [animationStarted, setAnimationStarted]: [number, Dispatch<SetStateAction<number>>] = useState(-1);
+    const [ currentFrame, setCurrentFrame ]: [ number, Dispatch<SetStateAction<number>> ] = useState(-1);
+    const [ animationStarted, setAnimationStarted ]: [ number, Dispatch<SetStateAction<number>> ] = useState(-1);
+    const [ terminated, setTerminated ]: [ boolean, Dispatch<SetStateAction<boolean>> ] = useState(false);
 
     const opacityValue = new Animated.Value(0);
     const movementValue = new Animated.Value(0);
@@ -177,7 +176,7 @@ const BaseAnimationChain: React.FC<Props> = memo(({ children, frames, infinite, 
 
     const animate = useCallback(() => {
         const Animation: TFrame = sequencer[currentFrame];
-
+        console.log('Animate frame '+currentFrame);
         let sequenceFinished = 0;
         let sequences = Object.entries(Animation.sequences);
         let sequencesLength = sequences.length;
@@ -186,10 +185,11 @@ const BaseAnimationChain: React.FC<Props> = memo(({ children, frames, infinite, 
 
         if (Animation?.options?.onStart) Animation.options.onStart();
 
+        const frameStyles:TStyles = {}
+
         for (const [id, sequence] of sequences) {
             if (sequence.type === 'slide') {
                 movementValue.setValue(0);
-
                 interpolatedAnimationY = movementValue.interpolate({
                     inputRange: [0, 1],
                     outputRange: sequence.outputRangeY,
@@ -198,27 +198,12 @@ const BaseAnimationChain: React.FC<Props> = memo(({ children, frames, infinite, 
                     inputRange: [0, 1],
                     outputRange: sequence.outputRangeX,
                 });
-                if (!infinite)
-                    setStyles({
-                        ...styles,
-                        translateX: interpolatedAnimationX,
-                        translateY: interpolatedAnimationY,
-                    });
+                frameStyles.translateX = interpolatedAnimationX;
+                frameStyles.translateY = interpolatedAnimationY;
             } else if (sequence.type === 'fade') {
                 opacityValue.setValue(sequence.fromValue);
-                if (!infinite)
-                    setStyles({
-                        ...styles,
-                        opacity: opacityValue,
-                    });
+                frameStyles.opacity = opacityValue;
             }
-
-            if (infinite)
-                setStyles({
-                    opacity: opacityValue,
-                    translateX: interpolatedAnimationX,
-                    translateY: interpolatedAnimationY,
-                });
 
             const timing = sequence.type === 'slide' ? movementValue : sequence.type === 'fade' ? opacityValue : movementValue;
 
@@ -231,29 +216,37 @@ const BaseAnimationChain: React.FC<Props> = memo(({ children, frames, infinite, 
                 }
             });
         }
+
+        setStyles(frameStyles);
+		
     }, [currentFrame]);
     
-    
-
 
     useEffect(() => {
             if (currentFrame >= frames.length) {
+                setTerminated(true);
                 setAnimationStarted(-1);
                 if (infinite) setCurrentFrame(0);
             }
             else {
                 if (currentFrame === -1) {
                     if (!disabled) {
+                        if (terminated) setTerminated(false);
                         setCurrentFrame(0);
                     }
                 }
                 else if (animationStarted !== currentFrame) {
                     if (!disabled) {
                         setAnimationStarted(currentFrame);
+                        if (terminated) setTerminated(false);
                         animate();
                     }
 
                 }
+            }
+            if (disabled && restartAfterDisable && terminated) {
+                opacityValue.setValue(0);;
+                movementValue.setValue(0);
             }
     }, [currentFrame, disabled]);
 
