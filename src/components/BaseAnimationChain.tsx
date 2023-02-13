@@ -40,17 +40,17 @@ type TSequenceOptions = {
 
 type TSequenceFade = {
     type: 'fade';
-    animation: Animated.TimingAnimationConfig;
+    animation: Animated.CompositeAnimation;
     options?: TSequenceOptions;
     fromValue: number;
 };
 
 type TSequenceSlide = {
     type: 'slide';
-    animation: Animated.TimingAnimationConfig;
+    animation:  Animated.CompositeAnimation;
     options?: TSequenceOptions;
-    outputRangeY: [number, number];
-    outputRangeX: [number, number];
+    outputRangeY:  number[];
+    outputRangeX: number[];
 };
 
 type TSequence = TSequenceFade | TSequenceSlide;
@@ -91,7 +91,11 @@ const defaultProps: Props = {
 };
 
         
-const initSequencer = (frames: TEntryFrameProps[]) : TSequencer => {
+const initSequencer = (
+    frames: TEntryFrameProps[], 
+    {opacityValue, movementValue}
+    : { opacityValue: Animated.Value, movementValue: Animated.Value}) 
+    : TSequencer => {
     const preparedFrames = []
     for (let [_, frame] of Object.entries(frames)) {
         const AnimationFrame: TFrame = {
@@ -102,7 +106,7 @@ const initSequencer = (frames: TEntryFrameProps[]) : TSequencer => {
             },
             sequences: frame.sequences.map(
                 (e: TEntryFrameSequenceSlideProps | TEntryFrameSequenceFadeProps) =>
-                    prepareSequence(e) as TSequenceSlide | TSequenceFade,
+                    prepareSequence(e, {opacityValue, movementValue }) as TSequenceSlide | TSequenceFade,
             ) as TSequence[],
             sequencesLength: frame.sequences.length,
         };
@@ -112,23 +116,42 @@ const initSequencer = (frames: TEntryFrameProps[]) : TSequencer => {
     return preparedFrames
 }
 
-const newFrameFade = (props: TEntryFrameSequenceFadeProps): TSequenceFade => {
+const prepareSequence = (
+    sequence: TEntryFrameSequenceSlideProps | TEntryFrameSequenceFadeProps, 
+    { opacityValue, movementValue}
+    : {opacityValue: Animated.Value, movementValue: Animated.Value}) 
+    : TSequence => {
+    if (sequence.type === 'fade') {
+        return newFrameFade(sequence, { opacityValue });
+    } else {
+        return newFrameSlide(sequence, { movementValue });
+    }
+};
+
+const newFrameFade = (
+    props: TEntryFrameSequenceFadeProps,
+    { opacityValue }: { opacityValue: Animated.Value })
+    : TSequenceFade => {
     const fromValue = props.mode === 'in' ? 0 : 1;
 
     return {
         type: 'fade',
         fromValue: fromValue,
-        animation: {
+        animation: Animated.timing(opacityValue, {
             delay: props.delay || 0,
             duration: props.duration || 500,
             easing: props.easing || Easing.linear,
             toValue: props.mode === 'in' ? 1 : 0,
             useNativeDriver: props.useNativeDriver || true,
-        },
+        }),
     };
 };
 
-const newFrameSlide = (props: TEntryFrameSequenceSlideProps): TSequenceSlide => {
+const newFrameSlide = (
+    props: TEntryFrameSequenceSlideProps,
+    { movementValue }: { movementValue: Animated.Value})
+    : TSequenceSlide => {
+
     let fromX, fromY, toX, toY;
     if (props.from) {
         fromX = props.from[0];
@@ -138,33 +161,31 @@ const newFrameSlide = (props: TEntryFrameSequenceSlideProps): TSequenceSlide => 
         toX = props.to[0];
         toY = props.to[1];
     }
+
+    const outputRangeY = props.from ? [fromY || 0, 0] : [0, toY || 0];
+    const outputRangeX = props.from ? [fromX || 0, 0] : [0, toX || 0]
+
     return {
         type: 'slide',
-        outputRangeY: props.from ? [fromY || 0, 0] : [0, toY || 0],
-        outputRangeX: props.from ? [fromX || 0, 0] : [0, toX || 0],
-        animation: {
+        outputRangeY: outputRangeY,
+        outputRangeX: outputRangeX,
+        animation: Animated.timing(movementValue, {
             delay: props.delay || 0,
             duration: props.duration || 500,
             easing: props.easing || Easing.linear,
             toValue: 1,
             useNativeDriver: props.useNativeDriver || true,
-        },
+        }),
     };
 };
 
-const prepareSequence = (sequence: TEntryFrameSequenceSlideProps | TEntryFrameSequenceFadeProps): TSequence => {
-    if (sequence.type === 'fade') {
-        return newFrameFade(sequence);
-    } else {
-        return newFrameSlide(sequence);
-    }
-};
 
 const prepareSequenceStyle = (
 	style: TStyles,
 	sequence: TSequence,
 	{ opacityValue, movementValue }
-	:{ opacityValue: Animated.Value, movementValue: Animated.Value }) => {
+	:{ opacityValue: Animated.Value, movementValue: Animated.Value })
+    : TStyles => {
 
 	if (sequence.type === 'fade') {
 		opacityValue.setValue(sequence.fromValue);
@@ -173,54 +194,66 @@ const prepareSequenceStyle = (
 
 	else if (sequence.type === 'slide')  {
 		movementValue.setValue(0);
-		let interpolatedAnimationY = movementValue.interpolate({
-			inputRange: [0, 1],
-			outputRange: sequence.outputRangeY,
-		});
-		let interpolatedAnimationX = movementValue.interpolate({
-			inputRange: [0, 1],
-			outputRange: sequence.outputRangeX,
-		});
-		style.translateX = interpolatedAnimationX;
-		style.translateY = interpolatedAnimationY;
+		style.translateX = movementValue.interpolate({
+            inputRange: [0, 1],
+            outputRange: sequence.outputRangeX,
+        })
+        style.translateY = movementValue.interpolate({
+            inputRange: [0, 1],
+            outputRange: sequence.outputRangeY,
+        })
 	}
+
+    return style;
 }
 
 
 const playSequence = (
 	sequence: TSequence, 
-	frameStyles: TStyles, 
-	{opacityValue, movementValue}
-	:{ opacityValue: Animated.Value, movementValue: Animated.Value }): Promise<void> => {
+    currentStyles: TStyles,
+	frameStyles: TStyles,
+    setStyles: Dispatch<SetStateAction<{}>>,
+	{opacityValue, movementValue}:{ opacityValue: Animated.Value, movementValue: Animated.Value },
+    infinite: boolean | undefined): Promise<void> => {
+
 		prepareSequenceStyle(frameStyles, sequence, { opacityValue, movementValue });
-		const timing = sequence.type === 'slide' ? movementValue : sequence.type === 'fade' ? opacityValue : movementValue;
+        if (!infinite) setStyles({...frameStyles});
+                console.log('setStyle',{...currentStyles,...frameStyles});
+
 	return new Promise((resolve, rej) => {
-		Animated.timing(timing, sequence.animation).start(() => {
-			resolve()
-		});
+        sequence.animation.start(() =>{
+            resolve()
+        })
+		// Animated.sequence()
+		// //DEVNOTE GROSS MAJ : Utiliser Animated.sequence et memoration
+		// Animated.sequence([]).reset
 	})
 }
 
 
 const BaseAnimationChain: React.FC<Props> = memo(({ children, frames, infinite, disabled, restartAfterDisable }: Props) => {
 
-    const sequencer = useMemo(() => initSequencer(frames), []);
+    const opacityValue = useRef(new Animated.Value(0)).current
+    const movementValue = useRef(new Animated.Value(0)).current
 
-    const [ styles, setStyles ]: [TStyles, Dispatch<SetStateAction<{}>>] = useState({});
+    const [ styles, setStyles ]: [TStyles, Dispatch<SetStateAction<TStyles>>] = useState({
+        opacity: opacityValue,
+    } as TStyles);
+
+    const sequencer = useMemo(() => initSequencer(frames, {opacityValue, movementValue}), []);
 
     const [ currentFrame, setCurrentFrame ]: [ number, Dispatch<SetStateAction<number>> ] = useState(-1);
     const [ animationStarted, setAnimationStarted ]: [ number, Dispatch<SetStateAction<number>> ] = useState(-1);
+    const [ started, setStarted ]: [ boolean, Dispatch<SetStateAction<boolean>> ] = useState(false);
     const [ terminated, setTerminated ]: [ boolean, Dispatch<SetStateAction<boolean>> ] = useState(false);
 
-    const opacityValue = new Animated.Value(0);
-    const movementValue = new Animated.Value(0);
 
     const animate = () => {
 
+        if (!started) setStarted(true);
         const Animation: TFrame = sequencer[currentFrame];
 
         let sequences = Object.entries(Animation.sequences);
-        let sequencesLength = sequences.length;
 
         if (Animation?.options?.onStart) Animation.options.onStart();
 
@@ -228,32 +261,44 @@ const BaseAnimationChain: React.FC<Props> = memo(({ children, frames, infinite, 
 		const threadSequences = [];
 
 		for (const [_, sequence] of sequences)
-			threadSequences.push(playSequence(sequence, frameStyles, { opacityValue, movementValue }));
+			threadSequences.push(playSequence(sequence, styles, frameStyles, setStyles, { opacityValue, movementValue }, infinite));
 
-		setStyles(frameStyles);
+        if (infinite) setStyles({...styles,...frameStyles});
 
 		Promise.all(threadSequences).then(() => { 
 			if (Animation?.options?.onFinish) Animation.options.onFinish();
-			setCurrentFrame(currentFrame + 1);
+            if (!disabled) setCurrentFrame(currentFrame + 1);
 		})
 
     }
-    
 
-	const getStyleStart = () => {
-		//devnote non fonctionnel
-		let style = {}
-		sequencer[0].sequences.forEach((e) => prepareSequenceStyle(style, e, { opacityValue, movementValue }));
-		// console.log('GET STYLE STAT');
-		// console.log({...style, opacity: opacityValue });
-		return {...style, opacity: opacityValue };
-	}
+    const resetSequencer = () => {
+        console.log('Reset sequencer');
+        // opacityValue.setValue(0);
+        
+        for (let frame of sequencer) {
+            for (let sequence of frame.sequences) {
+                sequence.animation.stop();
+                // sequence.animation.reset();
+            }
+        }
+
+        sequencer[0].sequences[0].animation.reset();
+        const startStyle = !infinite ? {...styles } : {};
+        // sequencer[0].sequences.forEach(sequence => {
+            prepareSequenceStyle(startStyle, sequencer[0].sequences[0], { opacityValue, movementValue });
+        // })
+        setStyles(startStyle)
+    }
 
     useEffect(() => {
 			if (disabled) {
-				if (!terminated) setTerminated(true);
-				if (restartAfterDisable && currentFrame > -1) setStyles(getStyleStart())	
-				setCurrentFrame(-1);
+                if (restartAfterDisable && currentFrame > -1) {
+                    resetSequencer();
+                }
+                if (!terminated) setTerminated(true);
+				if (currentFrame !== -1) setCurrentFrame(-1);
+                if (started) setStarted(false);
 			}
             else if (currentFrame >= frames.length) {
                 if (!terminated) setTerminated(true);
@@ -262,6 +307,7 @@ const BaseAnimationChain: React.FC<Props> = memo(({ children, frames, infinite, 
             }
             else {
                 if (currentFrame === -1) {
+                    if (started) setStarted(false);
 					if (terminated) setTerminated(false);
 					setCurrentFrame(0);
                 }
@@ -272,12 +318,12 @@ const BaseAnimationChain: React.FC<Props> = memo(({ children, frames, infinite, 
                 }
             }
 
-    }, [currentFrame, disabled]);
+    }, [currentFrame, started, terminated, disabled]);
 
 
     return <Animated.View style={[styles]}>{children}</Animated.View>;
 
-},(prev, next) => (prev.disabled === next.disabled && prev.infinite === next.infinite && next.frames === prev.frames));
+},(prev, next) => (prev.disabled === next.disabled && prev.infinite === next.infinite));
 
 BaseAnimationChain.defaultProps = defaultProps;
 

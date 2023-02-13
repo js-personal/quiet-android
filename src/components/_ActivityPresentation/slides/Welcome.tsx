@@ -104,7 +104,7 @@ export default memo((props: Props) => {
                 {
                     type: 'slide',
                     from: [0, -250],
-                    duration: 1000,
+                    duration: 1500,
                     delay: 3300,
                     easing: Easing.out(Easing.exp),
                 },
@@ -117,7 +117,7 @@ export default memo((props: Props) => {
                 {
                     type: 'slide',
                     from: [0, 250],
-                    duration: 1000,
+                    duration: 1500,
                     delay: 3300,
                     easing: Easing.out(Easing.exp),
                 },

@@ -88,7 +88,7 @@ export default function Presentation() {
                     {
                         type: 'slide',
                         from: [0, 200],
-                        duration: 1000,
+                        duration: 2000,
                         easing: Easing.out(Easing.exp)
                     }
                 ]
