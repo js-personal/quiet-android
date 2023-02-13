@@ -6,6 +6,7 @@ import { CustomTheme } from '@assets/themes';
 import useTranslation from '@composables/useTranslation';
 
 import BaseAnimationChain, { TEntryFrameProps } from '@components/BaseAnimationChain';
+
 import { memo } from 'react';
 
 type Props = {
