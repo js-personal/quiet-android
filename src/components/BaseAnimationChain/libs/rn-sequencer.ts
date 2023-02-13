@@ -6,7 +6,6 @@
 
 import { Dispatch, SetStateAction } from "react";
 import { Animated, Easing, EasingFunction } from "react-native";
-import { DynamicColorIOS } from "react-native/Libraries/StyleSheet/PlatformColorValueTypesIOS";
 
 const EntryAnimationSequenceType = ['fade', 'slide'] as const;
 export type TEntryFrameSequenceType = (typeof EntryAnimationSequenceType)[number];
@@ -140,39 +139,39 @@ export default class Sequencer implements ISequencer {
     }
 
     run() {
-        console.log('START');
+        // console.log('START');
         this.stopped = false;
         if (!this.started && !this.requestRestart && !this.paused) {
-            this.start()
+            return this.start()
             
         }
         else if (this.paused && !this.terminated) {
-            this.playingFrame = this.playingFrame - 1;
-            this.continue();
+            return this.continue();
         }
         else if (this.requestRestart) {
             this.requestRestart = false;
             this.playingFrame = -1;
-            this.start();
+            return this.start();
         }
     }
 
     stop() {
-        console.log('STOP');
+        // console.log('STOP');
         this.stopped = true;
         if (this.started) {
             this.started = false;
             if (this.restartAfterDisable) {
                 this.requestRestart = true;
-                this.reset();
+                return this.reset();
             }
             else {
-                this.pause();
+                return this.pause();
             }
         }
     }
 
     reset() {
+        // console.log('RESET');
         for (let frame of this.frames) {
             for (let sequence of frame.sequences) {
                 sequence.animation.reset()
@@ -180,6 +179,7 @@ export default class Sequencer implements ISequencer {
         }
         this.setStyles({...updateFrameStyles(this.styles, this.frames[0].sequences[0], {opacityValue: this.opacityValue, movementValue: this.movementValue })});
         this.playingFrame = -1;
+        return true;
     }
 
     private start() {
@@ -187,37 +187,42 @@ export default class Sequencer implements ISequencer {
         this.terminated = false;
         this.playingFrame = -1;
         this.requestFrame = 0.
-        this._playFrame(this.requestFrame).then(this._requestNextFrame.bind(this))
+        return this._playFrame(this.requestFrame).then(this._requestNextFrame.bind(this))
     }
 
     private continue() {
         this.paused = false;
-        this._continueFrame(this.playingFrame).then(this._requestNextFrame.bind(this))
+        if (this.playingFrame === -1) this.playingFrame = 0;
+        return this._continueFrame(this.playingFrame).then(this._requestNextFrame.bind(this))
     }
 
     private pause() {
+        // console.log('PAUSE');
         this.paused = true;
         for (let frame of this.frames) {
             for (let sequence of frame.sequences) {
                 sequence.animation.stop()
             }
         }
+        return true;
     }
 
     private terminate() {
         if (this.infinite && !this.paused) {
             this.start();
+            return false;
         }
         else {
             this.terminated = true
+            return true;
         }
     }
 
 
     async _playFrame(i: number) {
-
+        // console.log('PLAY : '+i);
         this.playingFrame = i;
-        console.log('Play frame :'+i);
+
         const Frame: TFrame = this.frames[i];
         let sequences = Object.entries(Frame.sequences);
         if (Frame?.options?.onStart) Frame.options.onStart();
@@ -242,7 +247,7 @@ export default class Sequencer implements ISequencer {
     }
 
     private async _continueFrame(i: number) {
-
+        // console.log('CONTINUE :'+i);
         const Frame: TFrame = this.frames[i];
         const sequences = Object.entries(Frame.sequences);
         const threadSequences = [];
@@ -259,10 +264,10 @@ export default class Sequencer implements ISequencer {
         })
     }
 
-    private _requestNextFrame(i: number) {
-        if (this.stopped) return;
-        else if (i >= this.frames.length) this.terminate()
-        else this._playFrame(i).then(this._requestNextFrame.bind(this))
+    private async _requestNextFrame(i: number): Promise<boolean> {
+        if (this.stopped) return false;
+        else if (i >= this.frames.length) return this.terminate()
+        else return await this._playFrame(i).then(this._requestNextFrame.bind(this))
     }
 }
 
