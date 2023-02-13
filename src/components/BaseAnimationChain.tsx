@@ -242,16 +242,15 @@ const BaseAnimationChain: React.FC<Props> = memo(({ children, frames, infinite, 
 
     const sequencer = useMemo(() => initSequencer(frames, {opacityValue, movementValue}), []);
 
-    const [ currentFrame, setCurrentFrame ]: [ number, Dispatch<SetStateAction<number>> ] = useState(-1);
-    const [ animationStarted, setAnimationStarted ]: [ number, Dispatch<SetStateAction<number>> ] = useState(-1);
+    const [ requestedFrame, setRequestedFrame ]: [ number, Dispatch<SetStateAction<number>> ] = useState(-1);
+    const [ playingFrame, setPlayingFrame ]: [ number, Dispatch<SetStateAction<number>> ] = useState(-1);
     const [ started, setStarted ]: [ boolean, Dispatch<SetStateAction<boolean>> ] = useState(false);
     const [ terminated, setTerminated ]: [ boolean, Dispatch<SetStateAction<boolean>> ] = useState(false);
 
 
     const animate = () => {
 
-        if (!started) setStarted(true);
-        const Animation: TFrame = sequencer[currentFrame];
+        const Animation: TFrame = sequencer[requestedFrame];
 
         let sequences = Object.entries(Animation.sequences);
 
@@ -259,7 +258,7 @@ const BaseAnimationChain: React.FC<Props> = memo(({ children, frames, infinite, 
 
 		const frameStyles:TStyles = {}
 		const threadSequences = [];
-
+        console.log('frame '+requestedFrame);
 		for (const [_, sequence] of sequences)
 			threadSequences.push(playSequence(sequence, styles, frameStyles, setStyles, { opacityValue, movementValue }, infinite));
 
@@ -267,7 +266,7 @@ const BaseAnimationChain: React.FC<Props> = memo(({ children, frames, infinite, 
 
 		Promise.all(threadSequences).then(() => { 
 			if (Animation?.options?.onFinish) Animation.options.onFinish();
-            if (!disabled) setCurrentFrame(currentFrame + 1);
+            setRequestedFrame(requestedFrame + 1);
 		})
 
     }
@@ -291,34 +290,50 @@ const BaseAnimationChain: React.FC<Props> = memo(({ children, frames, infinite, 
         setStyles(startStyle)
     }
 
+
+
     useEffect(() => {
-			if (disabled) {
-                if (restartAfterDisable && currentFrame > -1) {
-                    resetSequencer();
-                }
-                if (!terminated) setTerminated(true);
-				if (currentFrame !== -1) setCurrentFrame(-1);
-                if (started) setStarted(false);
-			}
-            else if (currentFrame >= frames.length) {
-                if (!terminated) setTerminated(true);
-                setAnimationStarted(-1);
-                if (infinite) setCurrentFrame(-1);
+
+            const disable = () => {
+                if (restartAfterDisable) resetSequencer();
             }
-            else {
-                if (currentFrame === -1) {
-                    if (started) setStarted(false);
-					if (terminated) setTerminated(false);
-					setCurrentFrame(0);
-                }
-                else if (animationStarted !== currentFrame) {
-					setAnimationStarted(currentFrame);
-					if (terminated) setTerminated(false);
-					animate();
+            const terminate = () => {
+                if (started) {
+                    if (!terminated) {
+                        if (infinite) {
+                            setRequestedFrame(-1);
+                            setPlayingFrame(-1);
+                            setStarted(false);
+                        }
+                        else {
+                            setTerminated(true);
+                        }
+                    }
                 }
             }
 
-    }, [currentFrame, started, terminated, disabled]);
+            //If it disabled
+			if (disabled) { 
+                disable();
+			}
+            //if frame arrive to end
+            else if (started && requestedFrame >= frames.length) {
+                terminate()
+            }
+            //if it next frame request
+            else if (started && requestedFrame > playingFrame) {
+                if (playingFrame < requestedFrame) setPlayingFrame(requestedFrame);
+                animate()
+            }
+            //if it default position
+            else if (!started && requestedFrame === -1 && playingFrame === -1) {
+                setStarted(true);
+                if (playingFrame < requestedFrame) setPlayingFrame(requestedFrame);
+                setRequestedFrame(requestedFrame+1);
+            }
+
+            
+    }, [requestedFrame, disabled]);
 
 
     return <Animated.View style={[styles]}>{children}</Animated.View>;

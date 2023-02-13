@@ -67,7 +67,7 @@ export default memo((props: Props) => {
                     type: 'fade',
                     mode: 'in',
                     duration: 1000,
-                    delay: 1500,
+                    delay: 1700,
                     easing: Easing.out(Easing.linear),
                 },
             ],
