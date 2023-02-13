@@ -90,6 +90,8 @@ export interface ISequencer {
     reset:() => void
 }
 
+const THREADS_SEQUENCES: Promise<boolean>[]= []
+
 export default class Sequencer implements ISequencer {
 
         private frames: TFrame[];
@@ -157,8 +159,8 @@ export default class Sequencer implements ISequencer {
 
     stop() {
         // console.log('STOP');
-        this.stopped = true;
-        if (this.started) {
+        if (this.started && !this.stopped) {
+            this.stopped = true;
             this.started = false;
             if (this.restartAfterDisable) {
                 this.requestRestart = true;
@@ -228,22 +230,28 @@ export default class Sequencer implements ISequencer {
         if (Frame?.options?.onStart) Frame.options.onStart();
     
         const frameStyles:TDynamicStyles = {}
-        const threadSequences = [];
+        const threadSequences: Promise<boolean>[]= [];
         for (const [_, sequence] of sequences) {
-            threadSequences.push(new Promise((resolve,rej) => {
+            THREADS_SEQUENCES.push(new Promise((resolve,rej) => { 
                 updateFrameStyles(frameStyles, sequence, { opacityValue: this.opacityValue, movementValue: this.movementValue });
                 sequence.animation.start(() =>{
-                    resolve(true)
+
+                    //DEvNote : callback exceessive number 501
+                    return resolve(true)
                 })
             }))
         }
+
+
         if (this.infinite) this.setStyles({...this.styles,...frameStyles});
         else this.setStyles({...frameStyles})
         
-        return Promise.all(threadSequences).then(() => { 
+        return Promise.all(THREADS_SEQUENCES).then(() => { 
             if (Frame?.options?.onFinish) Frame.options.onFinish();
             return i + 1;
         })
+
+      
     }
 
     private async _continueFrame(i: number) {
