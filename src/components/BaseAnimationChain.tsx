@@ -296,6 +296,9 @@ const BaseAnimationChain: React.FC<Props> = memo(({ children, frames, infinite, 
 
             const disable = () => {
                 if (restartAfterDisable) resetSequencer();
+                if (requestedFrame !== -1) setRequestedFrame(-1);
+                if (playingFrame !== -1) setPlayingFrame(-1);
+                if (started) setStarted(false);
             }
             const terminate = () => {
                 if (started) {
