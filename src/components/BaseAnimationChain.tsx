@@ -1,4 +1,4 @@
-import { Dispatch, memo, PropsWithChildren, SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Dispatch, memo, PropsWithChildren, SetStateAction, useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import { Animated, Easing, EasingFunction } from 'react-native';
 
 const EntryAnimationSequenceType = ['fade', 'slide'] as const;
@@ -79,14 +79,15 @@ interface Props extends PropsWithChildren<any> {
     children: JSX.Element | undefined;
     frames: TEntryFrameProps[];
     infinite?: boolean;
-    disabled?: boolean;
+    play?: boolean;
+    restartAfterDisable?: boolean;
 }
 
 const defaultProps: Props = {
     children: undefined,
     infinite: false,
     frames: [] as TEntryFrameProps[],
-    disabled: false,
+    play: true,
     restartAfterDisable: false,
 };
 
@@ -216,22 +217,17 @@ const playSequence = (
 	{opacityValue, movementValue}:{ opacityValue: Animated.Value, movementValue: Animated.Value },
     infinite: boolean | undefined): Promise<void> => {
 
-		prepareSequenceStyle(frameStyles, sequence, { opacityValue, movementValue });
-        if (!infinite) setStyles({...frameStyles});
-                console.log('setStyle',{...currentStyles,...frameStyles});
+        prepareSequenceStyle(frameStyles, sequence, { opacityValue, movementValue });
 
-	return new Promise((resolve, rej) => {
-        sequence.animation.start(() =>{
-            resolve()
+        return new Promise((resolve, rej) => {
+            sequence.animation.start(() =>{
+                resolve()
+            })
         })
-		// Animated.sequence()
-		// //DEVNOTE GROSS MAJ : Utiliser Animated.sequence et memoration
-		// Animated.sequence([]).reset
-	})
-}
+    }
 
 
-const BaseAnimationChain: React.FC<Props> = memo(({ children, frames, infinite, disabled, restartAfterDisable }: Props) => {
+const BaseAnimationChain: React.FC<Props> = memo(({ children, frames, infinite, play, restartAfterDisable }: Props) => {
 
     const opacityValue = useRef(new Animated.Value(0)).current
     const movementValue = useRef(new Animated.Value(0)).current
@@ -243,105 +239,140 @@ const BaseAnimationChain: React.FC<Props> = memo(({ children, frames, infinite, 
     const sequencer = useMemo(() => initSequencer(frames, {opacityValue, movementValue}), []);
 
     const [ requestedFrame, setRequestedFrame ]: [ number, Dispatch<SetStateAction<number>> ] = useState(-1);
-    const [ playingFrame, setPlayingFrame ]: [ number, Dispatch<SetStateAction<number>> ] = useState(-1);
-    const [ started, setStarted ]: [ boolean, Dispatch<SetStateAction<boolean>> ] = useState(false);
-    const [ terminated, setTerminated ]: [ boolean, Dispatch<SetStateAction<boolean>> ] = useState(false);
 
+    const [ refresh, setRefresh ]: [ boolean, Dispatch<SetStateAction<boolean>> ] = useState(false);
+
+    let started: React.MutableRefObject<boolean>= useRef(false)
+    let paused: React.MutableRefObject<boolean>= useRef(false)
+    let playing: React.MutableRefObject<boolean>= useRef(false)
+    let requestRestart: React.MutableRefObject<boolean> = useRef(false)
+    let terminated: React.MutableRefObject<boolean>= useRef(false)
+    let playingFrame: React.MutableRefObject<number> = useRef(-1)
+   
 
     const animate = () => {
 
         const Animation: TFrame = sequencer[requestedFrame];
-
         let sequences = Object.entries(Animation.sequences);
-
         if (Animation?.options?.onStart) Animation.options.onStart();
 
 		const frameStyles:TStyles = {}
 		const threadSequences = [];
-        console.log('frame '+requestedFrame);
 		for (const [_, sequence] of sequences)
 			threadSequences.push(playSequence(sequence, styles, frameStyles, setStyles, { opacityValue, movementValue }, infinite));
 
         if (infinite) setStyles({...styles,...frameStyles});
+        else setStyles({...frameStyles})
 
 		Promise.all(threadSequences).then(() => { 
 			if (Animation?.options?.onFinish) Animation.options.onFinish();
             setRequestedFrame(requestedFrame + 1);
 		})
-
     }
 
     const resetSequencer = () => {
-        console.log('Reset sequencer');
-        // opacityValue.setValue(0);
-        
+        console.log('resetSequencer');
         for (let frame of sequencer) {
             for (let sequence of frame.sequences) {
-                sequence.animation.stop();
-                // sequence.animation.reset();
+                sequence.animation.reset()
             }
         }
+        setStyles({...prepareSequenceStyle(styles, sequencer[0].sequences[0], {opacityValue, movementValue })});
+    }
 
-        sequencer[0].sequences[0].animation.reset();
-        const startStyle = !infinite ? {...styles } : {};
-        // sequencer[0].sequences.forEach(sequence => {
-            prepareSequenceStyle(startStyle, sequencer[0].sequences[0], { opacityValue, movementValue });
-        // })
-        setStyles(startStyle)
+    const stopSequencer =() => {
+        console.log('stopSequencer');
+
+        for (let frame of sequencer) {
+            for (let sequence of frame.sequences) {
+                sequence.animation.stop()
+            }
+        }
     }
 
 
+    const run = () => {
+        if (started.current !== true) { started.current = true; }
+        if (terminated.current) terminated.current = false;
+        if (playingFrame.current < requestedFrame) playingFrame.current = requestedFrame;
+        animate();
+    }
 
-    useEffect(() => {
-
-            const disable = () => {
-                if (restartAfterDisable) resetSequencer();
-                if (requestedFrame !== -1) setRequestedFrame(-1);
-                if (playingFrame !== -1) setPlayingFrame(-1);
-                if (started) setStarted(false);
+    const disable = () => {
+        if (started.current) {
+            if (restartAfterDisable) {
+                resetSequencer();
+                requestRestart.current = true;
+                setRefresh(true);
             }
-            const terminate = () => {
-                if (started) {
-                    if (!terminated) {
-                        if (infinite) {
-                            setRequestedFrame(-1);
-                            setPlayingFrame(-1);
-                            setStarted(false);
-                        }
-                        else {
-                            setTerminated(true);
-                        }
-                    }
+            else {
+                paused.current = true;
+                stopSequencer();
+            }
+        }
+    }
+
+    const terminate = () => {
+        if (started.current) {
+            if (!terminated.current) {
+                if (!infinite) {
+                    terminated.current = true;
+                    setRequestedFrame(-1);
+                    playingFrame.current = -1;
+                }
+                else {
+                    setRequestedFrame(0);
+                    playingFrame.current = -1
                 }
             }
 
-            //If it disabled
-			if (disabled) { 
-                disable();
-			}
-            //if frame arrive to end
-            else if (started && requestedFrame >= frames.length) {
-                terminate()
-            }
-            //if it next frame request
-            else if (started && requestedFrame > playingFrame) {
-                if (playingFrame < requestedFrame) setPlayingFrame(requestedFrame);
-                animate()
-            }
-            //if it default position
-            else if (!started && requestedFrame === -1 && playingFrame === -1) {
-                setStarted(true);
-                if (playingFrame < requestedFrame) setPlayingFrame(requestedFrame);
-                setRequestedFrame(requestedFrame+1);
-            }
+        }
+    }
 
-            
-    }, [requestedFrame, disabled]);
+
+    
+    useEffect(() => {
+        if (!play) {
+            if (playing.current) {
+                playing.current = false;
+                disable();
+            }
+        }
+        else {
+            playing.current = true;
+            if (!started.current && !requestRestart.current && !paused.current) {
+                console.log('pas demarrer')
+                playingFrame.current = -1;
+                setRequestedFrame(0);
+                
+            }
+            else if (started.current && paused.current && !terminated.current) {
+                setRequestedFrame(playingFrame.current);
+                playingFrame.current = playingFrame.current - 1;
+            }
+            else if (requestRestart.current) {
+                console.log('deja demarré et besoin de restart')
+                requestRestart.current = false;
+                playingFrame.current = -1;
+                setRequestedFrame(0);
+            }
+        }
+    }, [play])
+
+    useEffect(() => {
+        if (!playing.current) return ;
+        if (requestedFrame >= frames.length) {
+            terminate();
+        }
+        else if (requestedFrame > playingFrame.current) {
+            run();
+        }
+    }, [requestedFrame]);
 
 
     return <Animated.View style={[styles]}>{children}</Animated.View>;
 
-},(prev, next) => (prev.disabled === next.disabled && prev.infinite === next.infinite));
+},(prev, next) => (prev.play === next.play && prev.infinite === next.infinite));
 
 BaseAnimationChain.defaultProps = defaultProps;
 

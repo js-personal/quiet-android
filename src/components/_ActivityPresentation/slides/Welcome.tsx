@@ -191,31 +191,31 @@ export default memo((props: Props) => {
 
     return (
         <View style={[RootCSS.container, RootCSS.justifyCenter, RootCSS.alignCenter]}>
-            <BaseAnimationChain frames={framesTextWelcome} disabled={!enabled} restartAfterDisable={true}>
+            <BaseAnimationChain frames={framesTextWelcome} play={enabled} restartAfterDisable={true}>
                 <Text style={styles.textWelcome}>{translate('w.welcome')}</Text>
             </BaseAnimationChain>
-            <BaseAnimationChain frames={framesTextOn} disabled={!enabled} restartAfterDisable={true}>
+            <BaseAnimationChain frames={framesTextOn} play={enabled} restartAfterDisable={true}>
                 <Text style={styles.textOn}>{translate('w.on')}</Text>
             </BaseAnimationChain>
 
-            <BaseAnimationChain frames={framesCtnLogo} disabled={!enabled} restartAfterDisable={true}>
+            <BaseAnimationChain frames={framesCtnLogo} play={enabled} restartAfterDisable={true}>
                 <View style={styles.logoContainer}>
-                    <BaseAnimationChain frames={framesLogoImage} disabled={!enabled} restartAfterDisable={true}>
+                    <BaseAnimationChain frames={framesLogoImage} play={enabled} restartAfterDisable={true}>
                         <Image source={require('@assets/img/logo.png')} style={styles.logo} />
                     </BaseAnimationChain>
-                    <BaseAnimationChain frames={framesLogoTitle} disabled={!enabled} restartAfterDisable={true}>
+                    <BaseAnimationChain frames={framesLogoTitle} play={enabled} restartAfterDisable={true}>
                         <Text style={styles.textApp}>Quiet</Text>
                     </BaseAnimationChain>
                 </View>
             </BaseAnimationChain>
-            <BaseAnimationChain frames={framesTextDescription} disabled={!enabled} restartAfterDisable={true}>
+            <BaseAnimationChain frames={framesTextDescription} play={enabled} restartAfterDisable={true}>
                 <View style={styles.logoContainer}>
                     <Text style={styles.textDescription}>{translate('present.description')}</Text>
                 </View>
             </BaseAnimationChain>
-            <BaseAnimationChain frames={framesSlideTouch} disabled={!enabled}>
-                <View style={styles.touchContainer}>
-                    <BaseAnimationChain frames={framesSlideTouchHand} infinite={true} disabled={!enabled}>
+            <BaseAnimationChain frames={framesSlideTouch} play={enabled}>
+                <View style={[styles.touchContainer,{backgroundColor: 'red'}]}>
+                    <BaseAnimationChain frames={framesSlideTouchHand} infinite={true} play={enabled}>
                         <Image source={linkImageTouchHand} style={styles.touchIcon} />
                     </BaseAnimationChain>
                 </View>
@@ -274,7 +274,9 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
         left: 0,
         top: 140,
+        height: 200,
         alignItems: 'center',
+        backgroundColor: '#000',
     },
     touchIcon: {
         width: 50,
