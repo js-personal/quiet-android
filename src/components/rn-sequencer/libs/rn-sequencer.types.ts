@@ -1,3 +1,5 @@
+
+
 import { Animated, EasingFunction } from "react-native";
 
 export type TEntryFrameSequenceType = 'fade' | 'slide';
@@ -74,8 +76,24 @@ export type TFramesOptions = {
     infinite?: boolean;
     restartAfterDisable?: boolean;
 };
-
+ /**
+   *  Sequencer Interface Class
+   *
+   * @returns ISequencer
+   *
+   * @beta
+   */
 export interface ISequencer {
+ /**
+   * Run the sequencer for inputed frames
+   *
+   * @returns Promise
+   */
     run:() => void
+/**
+   * Stop/Pause the sequencer for inputed frames
+   *
+   * @returns Promise
+   */
     stop:() => void
 }

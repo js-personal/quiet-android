@@ -4,25 +4,26 @@
  *  *
  */
 
+const DEBUG = false;
+
 import { Dispatch, SetStateAction } from "react";
-import { Animated, Easing, EasingFunction, DeviceEventEmitter} from "react-native";
-import type { 
-    ISequencer,
-    TEntryFrameProps,
-    TDynamicStyles,
-    TFrame,
+import { Animated, Easing, DeviceEventEmitter} from "react-native";
+
+import { 
+    ISequencer, 
+    TDynamicStyles, 
+    TEntryFrameProps, 
+    TEntryFrameSequenceFadeProps, 
+    TEntryFrameSequenceSlideProps, 
+    TFrame, 
     TFramesOptions, 
-    TEntryFrameSequenceSlideProps,
-    TEntryFrameSequenceFadeProps,
-    TSequenceSlide,
-    TSequenceFade,
-    TSequence } from './types';
-
-
-
-import uuid from 'react-native-uuid';
+    TSequence, 
+    TSequenceFade, 
+    TSequenceSlide } from "./rn-sequencer.types";
 
 const ModuleEmitter = DeviceEventEmitter;
+let instanceId = -1
+
 
 export default class Sequencer implements ISequencer {
 
@@ -37,10 +38,11 @@ export default class Sequencer implements ISequencer {
         private paused = false;
         private requestRestart = false;
         private terminated= false;
+        private reseted = false;
         private requestFrame = -1;
         private playingFrame = -1;
         private restartAfterDisable = false;
-        private _instanceId: string | number[];
+        private _instanceId: number;
         private _threads: Promise<boolean>[] = []
 
         constructor(
@@ -56,7 +58,8 @@ export default class Sequencer implements ISequencer {
                 this.opacityValue = opacityValue;
                 this.movementValue = movementValue;
                 this.restartAfterDisable = restartAfterDisable || false;
-                this._instanceId = uuid.v4();
+                this._instanceId = instanceId++
+
                 for (let [_, frame] of Object.entries(entryFrames)) {
                     const AnimationFrame: TFrame = {
                         options: {
@@ -76,16 +79,16 @@ export default class Sequencer implements ISequencer {
     }
 
     run() {
-        // console.log('START');
+         
         this.stopped = false;
-        if (!this.started && !this.requestRestart && !this.paused) {
+        if (!this.started && !this.paused) {
             return this.start()
             
         }
         else if (this.paused && !this.terminated) {
             return this.continue();
         }
-        else if (this.requestRestart) {
+        else if (!this.paused && this.requestRestart) {
             this.requestRestart = false;
             this.playingFrame = -1;
             return this.start();
@@ -93,9 +96,10 @@ export default class Sequencer implements ISequencer {
     }
 
     stop() {
-        // console.log('STOP');
-        if (this.stopped) return false;
-        if (this.started && !this.stopped) {
+         
+        if (this.stopped || this.paused) return false;
+
+        if (this.started) {
             this.stopped = true;
             this.started = false;
             if (this.restartAfterDisable) {
@@ -110,33 +114,46 @@ export default class Sequencer implements ISequencer {
     }
 
     private start() {
+
         this.started = true;
         this.terminated = false;
+        this.paused = false;
         this.playingFrame = -1;
-        this.requestFrame = 0.
+        this.requestFrame = 0;
+        this.reseted = false;
         return this._playFrame(this.requestFrame).then(this._requestNextFrame.bind(this))
     }
 
     private continue() {
+         
         this.paused = false;
         if (this.playingFrame === -1) this.playingFrame = 0;
         return this._continueFrame(this.playingFrame).then(this._requestNextFrame.bind(this))
     }
 
     private pause() {
+         
         if (this.paused) return false;
         this.paused = true;
         for (let frame of this.frames) for (let sequence of frame.sequences) sequence.animation.stop()
+        ModuleEmitter.emit(this._instanceId+'frame.stopped');
         ModuleEmitter.removeAllListeners(this._instanceId+'frame.stopped');
+        this._threads = [];
+
         return true;
     }
 
     private reset() {
+         
+        if (this.reseted) return
+        this.reseted = true;
         for (let frame of this.frames)
             for (let sequence of frame.sequences)  sequence.animation.reset()
         this.setStyles({...updateFrameStyles(this.styles, this.frames[0].sequences[0], {opacityValue: this.opacityValue, movementValue: this.movementValue })});
         ModuleEmitter.emit(this._instanceId+'frame.stopped');
         ModuleEmitter.removeAllListeners(this._instanceId+'frame.stopped');
+        this._threads = [];
+
         this.playingFrame = -1;
         return true;
     }
@@ -145,17 +162,20 @@ export default class Sequencer implements ISequencer {
         if (this.infinite && !this.paused) {
             return false;
         }
-        else if (!this.infinite) {
+        else if (!this.infinite && !this.paused) {
+             
             this.terminated = true
             return true;
         }
-        return false;
+         
+        return true;
     }
 
 
     async _playFrame(i: number) {
+         
+        if (this.playingFrame === i) return -1;
         this.playingFrame = i;
-
         const Frame: TFrame = this.frames[i];
         let sequences = Object.entries(Frame.sequences);
         if (Frame?.options?.onStart) Frame.options.onStart();
@@ -165,17 +185,16 @@ export default class Sequencer implements ISequencer {
         this._threads = [];
         for (const [_, sequence] of sequences) {
             this._threads.push(new Promise((resolve,rej) => { 
-                //DevNote Bug from NativeModule : exceessive callback
                 updateFrameStyles(frameStyles, sequence, { opacityValue: this.opacityValue, movementValue: this.movementValue });
                 const Event = ModuleEmitter.addListener(this._instanceId+'frame.stopped', () => {
                     return resolve(false);
                 })
-                return sequence.animation.start(() =>{
+                sequence.animation.start(() =>{
                     Event.remove()
                     return resolve(true)
                 })
-                
-            }))
+            })
+            )
         }
 
 
@@ -183,8 +202,9 @@ export default class Sequencer implements ISequencer {
         else this.setStyles({...frameStyles})
         
         return Promise.all(this._threads).then(() => { 
-            console.log('Promise ALL OK');
-            console.log(this._threads);
+             
+            if (!this._threads.length)  
+            if (!this._threads.length) return -1
             if (Frame?.options?.onFinish) Frame.options.onFinish();
             return i + 1;
         })
@@ -193,6 +213,7 @@ export default class Sequencer implements ISequencer {
     }
 
     private async _continueFrame(i: number) {
+         
         const Frame: TFrame = this.frames[i];
         const sequences = Object.entries(Frame.sequences);
         this._threads = [];
@@ -207,17 +228,20 @@ export default class Sequencer implements ISequencer {
                 })
             }))
         }
-        return Promise.all(this._threads).then(() => { 
+        return Promise.all(this._threads).then(() => {
+             
+            if (!this._threads.length)  
+            if (!this._threads.length) return -1
             if (Frame?.options?.onFinish) Frame.options.onFinish();
             return i + 1;
         })
     }
 
     private async _requestNextFrame(i: number): Promise<boolean> {
-        if (this.stopped) return false;
+        if (this.stopped || this.paused || i === -1) return false;
         else if (i >= this.frames.length)  {
             if (this.terminate()) return false;
-            else return await this._playFrame(0).then(this._requestNextFrame.bind(this))
+            else return await this.start();
         }
         else return await this._playFrame(i).then(this._requestNextFrame.bind(this))
     }

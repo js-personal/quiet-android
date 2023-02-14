@@ -1,11 +1,10 @@
 import type { SetStateAction, MemoExoticComponent } from 'react';
-import type { ISequencer, TEntryFrameProps,TDynamicStyles } from './types';
 import { Dispatch, memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated } from 'react-native';
+import type { ISequencer, TEntryFrameProps,TDynamicStyles } from './rn-sequencer.types';
+import SequencerCore from './rn-sequencer';
 
-import CoreSequencer from './class';
 
-console.log(CoreSequencer);
 type TEntryBaseSequencerProps = {
     children: JSX.Element | undefined;
     frames: TEntryFrameProps[];
@@ -30,8 +29,16 @@ function useDefaultProps<P extends object>(
       ...props
     };
   }
-
-const BaseSequencer: MemoExoticComponent<React.FC<TEntryBaseSequencerProps>> = memo((_props: TEntryBaseSequencerProps) => {
+ /**
+   * New Sequencer Component
+   *
+   * @params play = boolean (dynamic)
+   * @params children = JSX.Element
+   * @params frames = TEntryFrameProps[]
+   * @params infinite = boolean
+   * @params restartAfterDisable = boolean
+   */
+const SequencerComponent: MemoExoticComponent<React.FC<TEntryBaseSequencerProps>> = memo((_props: TEntryBaseSequencerProps) => {
     const { children, frames, infinite, play, restartAfterDisable } = useDefaultProps(_props);
     const opacityValue = useRef(new Animated.Value(0)).current
     const movementValue = useRef(new Animated.Value(0)).current
@@ -40,10 +47,10 @@ const BaseSequencer: MemoExoticComponent<React.FC<TEntryBaseSequencerProps>> = m
         opacity: opacityValue,
     } as TDynamicStyles);
 
-        const sequencer : ISequencer = useMemo(
-            () => new CoreSequencer(frames, styles, setStyles, { infinite, restartAfterDisable }, {opacityValue, movementValue}), 
-            []
-        );
+    const sequencer : ISequencer = useMemo(
+        () => new SequencerCore(frames, styles, setStyles, { infinite, restartAfterDisable }, {opacityValue, movementValue}), 
+        []
+    );
 
     useEffect(() => {
         if (play) {
@@ -59,4 +66,4 @@ const BaseSequencer: MemoExoticComponent<React.FC<TEntryBaseSequencerProps>> = m
 },(prev, next) => (prev.play === next.play && prev.infinite === next.infinite));
 
 
-export default BaseSequencer;
+export default SequencerComponent;

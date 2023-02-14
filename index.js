@@ -5,7 +5,7 @@ import App from './src/App';
 import { Provider } from 'react-redux';
 
 import stores from './src/stores/configureStore';
-console.log(appName);
+
 const RNRedux = () => (
     <Provider store={stores}>
         <App />

@@ -1,11 +1,10 @@
 import type { MemoExoticComponent } from 'react';
-import type { TEntryFrameProps } from './BaseSequencer';
+
 import { memo, useCallback, useRef, useMemo, ReactElement } from 'react';
 import { StyleSheet, View, NativeScrollEvent, Animated, NativeSyntheticEvent, ListRenderItem } from 'react-native';
-import BaseSequencer from './BaseSequencer';
+import SequencerComponent from '@components/rn-sequencer';
+import type { TEntryFrameProps } from '@components/rn-sequencer';
 import PaginationDotLiquid from './PaginationDotLiquid';
-
-console.log('Base',BaseSequencer);
 
 
 type TEntryPropsSlide = {
@@ -30,12 +29,10 @@ export type TEntryBasePresentationProps = {
 
 
 const BasePresentationSliders:MemoExoticComponent<React.FC<TEntryBasePresentationProps>> =  memo((props: TEntryBasePresentationProps) => {
-    // console.log('Render: BasePresentationSliders');
+
     const { slides, slideWidth, slideHeight } = props;
     const scrollX = useRef(new Animated.Value(0)).current;
     let scrollOffset = useRef(new Animated.Value(0)).current;
-
-
 
     const onScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
         const x = event.nativeEvent.contentOffset.x;
@@ -67,9 +64,9 @@ const BasePresentationSliders:MemoExoticComponent<React.FC<TEntryBasePresentatio
             
             if (frames)
                 return (
-                    <BaseSequencer frames={ frames }>
+                    <SequencerComponent frames={ frames }>
                       {PaginationMemo}
-                    </BaseSequencer>
+                    </SequencerComponent>
                 );
             else return PaginationMemo
         }

@@ -5,7 +5,9 @@ import { CustomTheme } from '@assets/themes';
 
 import useTranslation from '@composables/useTranslation';
 
-import BaseSequencer, { TEntryFrameProps } from '@components/BaseSequencer';
+import type { TEntryFrameProps } from '@components/rn-sequencer';
+import SequencerComponent from '@components/rn-sequencer';
+
 
 import { memo } from 'react';
 
@@ -19,7 +21,7 @@ export default memo((props: Props) => {
     const theme = useTheme() as CustomTheme;
     const enabled = props.enable !== undefined ? props.enable : true;
     let linkImageTouchHand;
-    // console.log('Render slide Welcome');
+
     switch (true) {
         case theme.name === 'light':
             linkImageTouchHand = require('@assets/img/touch-screen-line-light.png');
@@ -192,35 +194,35 @@ export default memo((props: Props) => {
 
     return (
         <View style={[RootCSS.container, RootCSS.justifyCenter, RootCSS.alignCenter]}>
-            <BaseSequencer frames={framesTextWelcome} play={enabled} restartAfterDisable={true}>
+            <SequencerComponent frames={framesTextWelcome} play={enabled} restartAfterDisable={true}>
                 <Text style={styles.textWelcome}>{translate('w.welcome')}</Text>
-            </BaseSequencer>
-            <BaseSequencer frames={framesTextOn} play={enabled} restartAfterDisable={true}>
+            </SequencerComponent>
+            <SequencerComponent frames={framesTextOn} play={enabled} restartAfterDisable={true}>
                 <Text style={styles.textOn}>{translate('w.on')}</Text>
-            </BaseSequencer>
+            </SequencerComponent>
 
-            <BaseSequencer frames={framesCtnLogo} play={enabled} restartAfterDisable={true}>
+            <SequencerComponent frames={framesCtnLogo} play={enabled} restartAfterDisable={true}>
                 <View style={styles.logoContainer}>
-                    <BaseSequencer frames={framesLogoImage} play={enabled} restartAfterDisable={true}>
+                    <SequencerComponent frames={framesLogoImage} play={enabled} restartAfterDisable={true}>
                         <Image source={require('@assets/img/logo.png')} style={styles.logo} />
-                    </BaseSequencer>
-                    <BaseSequencer frames={framesLogoTitle} play={enabled} restartAfterDisable={true}>
+                    </SequencerComponent>
+                    <SequencerComponent frames={framesLogoTitle} play={enabled} restartAfterDisable={true}>
                         <Text style={styles.textApp}>Quiet</Text>
-                    </BaseSequencer>
+                    </SequencerComponent>
                 </View>
-            </BaseSequencer>
-            <BaseSequencer frames={framesTextDescription} play={enabled} restartAfterDisable={true}>
+            </SequencerComponent>
+            <SequencerComponent frames={framesTextDescription} play={enabled} restartAfterDisable={true}>
                 <View style={styles.logoContainer}>
                     <Text style={styles.textDescription}>{translate('present.description')}</Text>
                 </View>
-            </BaseSequencer>
-            <BaseSequencer frames={framesSlideTouch} play={enabled}>
+            </SequencerComponent>
+            <SequencerComponent frames={framesSlideTouch} play={enabled}>
                 <View style={[styles.touchContainer,{backgroundColor: 'red'}]}>
-                    <BaseSequencer frames={framesSlideTouchHand} infinite={true} play={enabled}>
+                    <SequencerComponent frames={framesSlideTouchHand} infinite={true} play={enabled}>
                         <Image source={linkImageTouchHand} style={styles.touchIcon} />
-                    </BaseSequencer>
+                    </SequencerComponent>
                 </View>
-            </BaseSequencer>
+            </SequencerComponent>
         </View>
     );
 });
