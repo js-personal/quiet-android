@@ -1,10 +1,12 @@
-import { Dispatch, memo, PropsWithChildren, SetStateAction, useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import { Animated, Easing, EasingFunction } from 'react-native';
-import { TDynamicStyles } from './libs/rn-sequencer';
-import CoreSequencer, { ISequencer, TEntryFrameProps } from './libs/rn-sequencer';
+import type { SetStateAction, MemoExoticComponent } from 'react';
+import type { ISequencer, TEntryFrameProps,TDynamicStyles } from './types';
+import { Dispatch, memo, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated } from 'react-native';
 
+import CoreSequencer from './class';
 
-interface Props extends PropsWithChildren<any> {
+console.log(CoreSequencer);
+type TEntryBaseSequencerProps = {
     children: JSX.Element | undefined;
     frames: TEntryFrameProps[];
     infinite?: boolean;
@@ -12,7 +14,7 @@ interface Props extends PropsWithChildren<any> {
     restartAfterDisable?: boolean;
 }
 
-const defaultProps: Props = {
+const defaultProps: TEntryBaseSequencerProps = {
     children: undefined,
     infinite: false,
     frames: [] as TEntryFrameProps[],
@@ -20,10 +22,17 @@ const defaultProps: Props = {
     restartAfterDisable: false,
 };
 
+function useDefaultProps<P extends object>(
+    props: P,
+  ): P & TEntryBaseSequencerProps {
+    return {
+      ...defaultProps,
+      ...props
+    };
+  }
 
-
-const BaseSequencer: React.FC<Props> = memo(({ children, frames, infinite, play, restartAfterDisable }: Props) => {
-
+const BaseSequencer: MemoExoticComponent<React.FC<TEntryBaseSequencerProps>> = memo((_props: TEntryBaseSequencerProps) => {
+    const { children, frames, infinite, play, restartAfterDisable } = useDefaultProps(_props);
     const opacityValue = useRef(new Animated.Value(0)).current
     const movementValue = useRef(new Animated.Value(0)).current
 
@@ -45,10 +54,9 @@ const BaseSequencer: React.FC<Props> = memo(({ children, frames, infinite, play,
         }
     }, [play])
 
-    return <Animated.View style={[styles]}>{children}</Animated.View>;
+    return <Animated.View style={[styles]}>{children}</Animated.View>
 
 },(prev, next) => (prev.play === next.play && prev.infinite === next.infinite));
 
-BaseSequencer.defaultProps = defaultProps;
 
 export default BaseSequencer;

@@ -1,18 +1,23 @@
-import { FunctionComponentElement, memo, useCallback, useRef, useMemo } from 'react';
-import { StyleSheet, View, NativeScrollEvent, Animated, NativeSyntheticEvent } from 'react-native';
-import BaseAnimationChain, { TEntryFrameProps } from './BaseAnimationChain';
+import type { MemoExoticComponent } from 'react';
+import type { TEntryFrameProps } from './BaseSequencer';
+import { memo, useCallback, useRef, useMemo, ReactElement } from 'react';
+import { StyleSheet, View, NativeScrollEvent, Animated, NativeSyntheticEvent, ListRenderItem } from 'react-native';
+import BaseSequencer from './BaseSequencer';
 import PaginationDotLiquid from './PaginationDotLiquid';
 
-type TSlide = {
+console.log('Base',BaseSequencer);
+
+
+type TEntryPropsSlide = {
     name: string;
-    component: FunctionComponentElement<any>;
+    component: ReactElement<any, string | React.JSXElementConstructor<any>> | null
     paginationDisabled?: boolean;
 };
 
-type TSlides = TSlide[];
+type TEntryPropsSlides = TEntryPropsSlide[];
 
-type TBasePresentationSlidersProps = {
-    slides: TSlides;
+export type TEntryBasePresentationProps = {
+    slides: TEntryPropsSlides;
     slideWidth: number;
     slideHeight: number;
     dotActive?: object;
@@ -22,45 +27,15 @@ type TBasePresentationSlidersProps = {
     paginationDisappearSequences?: TEntryFrameProps[];
     onChangeSlide?: (id: number | undefined) => void;
 };
-type TPaginationMemoProps = {
-    paginationEnabled ?: boolean;
-    slides: TSlides;
-    scrollX: Animated.Value;
-    scrollOffset: Animated.Value
-}
-
-const Pagination = memo((props: TPaginationMemoProps) => {
-    return (
-        <View style={styles.dotCtn}>
-            {props.paginationEnabled && (
-                <PaginationDotLiquid
-                    data={props.slides}
-                    scrollX={props.scrollX}
-                    scrollOffset={props.scrollOffset}
-                    dotSize={8}
-                    activeDotColor={'#687dfa'}
-                    inActiveDotColor={'black'}
-                    inActiveDotOpacity={0.3}
-                    marginHorizontal={2}
-                    strokeWidth={4}
-                    bigHeadScale={0.8}
-                />
-            )}
-        </View>
-    );
-}, (prev, next) => (prev.paginationEnabled === next.paginationEnabled));
 
 
-const renderSlide = ({ item }: { item: TSlide }) => {
-    return item.component;
-}
-
-
-export default memo(function BasePresentationSliders(props: TBasePresentationSlidersProps) {
+const BasePresentationSliders:MemoExoticComponent<React.FC<TEntryBasePresentationProps>> =  memo((props: TEntryBasePresentationProps) => {
     // console.log('Render: BasePresentationSliders');
     const { slides, slideWidth, slideHeight } = props;
     const scrollX = useRef(new Animated.Value(0)).current;
     let scrollOffset = useRef(new Animated.Value(0)).current;
+
+
 
     const onScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
         const x = event.nativeEvent.contentOffset.x;
@@ -92,15 +67,15 @@ export default memo(function BasePresentationSliders(props: TBasePresentationSli
             
             if (frames)
                 return (
-                    <BaseAnimationChain frames={ frames }>
+                    <BaseSequencer frames={ frames }>
                       {PaginationMemo}
-                    </BaseAnimationChain>
+                    </BaseSequencer>
                 );
             else return PaginationMemo
         }
     },[props.paginationEnabled])
 
-    const getItemLayout = useCallback((_: TSlide[] | null | undefined, index: number) => {
+    const getItemLayout = useCallback((_: TEntryPropsSlide[] | null | undefined, index: number) => {
         return {
             length: slideHeight,
             offset: slideHeight * index,
@@ -128,6 +103,37 @@ export default memo(function BasePresentationSliders(props: TBasePresentationSli
     );
 });
 
+const renderSlide: ListRenderItem<TEntryPropsSlide> = ({ item }: { item: TEntryPropsSlide }) => {
+    return item.component;
+}
+
+type TPaginationMemoProps = {
+    paginationEnabled ?: boolean;
+    slides: TEntryPropsSlides;
+    scrollX: Animated.Value;
+    scrollOffset: Animated.Value
+}
+
+const Pagination = memo((props: TPaginationMemoProps) => {
+    return (
+        <View style={styles.dotCtn}>
+            {props.paginationEnabled && (
+                <PaginationDotLiquid
+                    data={props.slides}
+                    scrollX={props.scrollX}
+                    scrollOffset={props.scrollOffset}
+                    dotSize={8}
+                    activeDotColor={'#687dfa'}
+                    inActiveDotColor={'black'}
+                    inActiveDotOpacity={0.3}
+                    marginHorizontal={2}
+                    strokeWidth={4}
+                    bigHeadScale={0.8}
+                />
+            )}
+        </View>
+    );
+}, (prev, next) => (prev.paginationEnabled === next.paginationEnabled));
 
 
 const styles = StyleSheet.create({
@@ -154,3 +160,6 @@ const styles = StyleSheet.create({
         backgroundColor: 'blue',
     },
 });
+
+
+export default BasePresentationSliders;

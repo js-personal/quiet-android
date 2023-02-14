@@ -20,7 +20,13 @@ elif [ $1 = '--reset-android' ]; then
     echo "[Helper.SH] Deleting last Android build files ..."
     # Supprimer le fichier quiet.android.bundle
 
-    files=(android/.gradle/ android/app/build/ android/app/src/main/assets/index.android.bundle)
+    files=(
+        android/.gradle/
+        android/app/build/
+        android/app/.cxx/
+        android/build/
+        android/app/src/main/assets/index.android.bundle
+    )
 
     for file in "${files[@]}"
     do

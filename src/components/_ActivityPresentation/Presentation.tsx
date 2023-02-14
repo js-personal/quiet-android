@@ -22,8 +22,6 @@ type TSlides = TSlide[]
 
 const Slide = memo(({ children, index, activeSlide } : { children: JSX.Element, index: number, activeSlide?: number }) => {
     const child = cloneElement(children, {enable: activeSlide === index}, null);
-    // console.log('Re-render slide : '+ index);
-    // console.log('> active: '+ (active === index ? 'true': 'false'))
     return <BaseSlide
                 width={width}
                 height={height}
@@ -40,7 +38,6 @@ export default function Presentation() {
     const Theme = useTheme();
     const [ viewPagination, setViewPagination ] = useState(false);
     const [ activeSlide, setActiveSlide ] = useState(0);
-    // console.log('Render: Presentation ###############################');
 
     const enablePagination = () => {
         if (!viewPagination) setViewPagination(true);

@@ -5,92 +5,24 @@
  */
 
 import { Dispatch, SetStateAction } from "react";
-import { Animated, Easing, EasingFunction } from "react-native";
-
-const EntryAnimationSequenceType = ['fade', 'slide'] as const;
-export type TEntryFrameSequenceType = (typeof EntryAnimationSequenceType)[number];
-const EntryAnimationSequenceFadePropsOptions = ['out', 'in'] as const;
-type TEntryFrameSequenceFadePropsOptions = (typeof EntryAnimationSequenceFadePropsOptions)[number];
-
-export type TEntryFrameProps = {
-    sequences: TEntryFrameSequences;
-    disableChildrenWhenTerminated?: boolean;
-    onStart?: Function;
-    onFinish?: Function;
-};
-
-export type TEntryFrameSequences = (TEntryFrameSequenceSlideProps | TEntryFrameSequenceFadeProps)[];
-
-type TEntryFrameSequenceFadeProps = {
-    type: 'fade';
-    mode: TEntryFrameSequenceFadePropsOptions[number];
-    duration?: number;
-    delay?: number;
-    easing?: EasingFunction;
-    useNativeDriver?: boolean;
-};
-
-type TEntryFrameSequenceSlideProps = {
-    type: 'slide';
-    from?: (number | undefined)[];
-    to?: (number | undefined)[];
-    duration: number;
-    delay?: number;
-    easing?: EasingFunction;
-    useNativeDriver?: boolean;
-};
-
-type TSequence = TSequenceFade | TSequenceSlide;
-
-type TSequenceFade = {
-    type: 'fade';
-    animation: Animated.CompositeAnimation;
-    options?: TSequenceOptions;
-    fromValue: number;
-};
-
-type TSequenceSlide = {
-    type: 'slide';
-    animation:  Animated.CompositeAnimation;
-    options?: TSequenceOptions;
-    outputRangeY:  number[];
-    outputRangeX: number[];
-};
-
-type TSequenceOptions = {
-    //DevNote create laters;
-};
+import { Animated, Easing, EasingFunction, DeviceEventEmitter} from "react-native";
+import type { 
+    ISequencer,
+    TEntryFrameProps,
+    TDynamicStyles,
+    TFrame,
+    TFramesOptions, 
+    TEntryFrameSequenceSlideProps,
+    TEntryFrameSequenceFadeProps,
+    TSequenceSlide,
+    TSequenceFade,
+    TSequence } from './types';
 
 
-type TFrame = {
-    options: TFrameOptions;
-    sequences: TSequence[];
-};
 
-type TFrameOptions = {
-    disableChildrenWhenTerminated: boolean;
-    onStart: Function | null;
-    onFinish: Function | null;
-};
+import uuid from 'react-native-uuid';
 
-export type TDynamicStyles = {
-    opacity?: Animated.Value;
-    translateX?: Animated.AnimatedInterpolation<string | number>;
-    translateY?: Animated.AnimatedInterpolation<string | number>;
-};
-
-type TFramesOptions = {
-    infinite?: boolean;
-    restartAfterDisable?: boolean;
-};
-
-export interface ISequencer {
-    run:() => void
-    stop:() => void
-    reset:() => void
-}
-
-const THREADS_SEQUENCES: Promise<boolean>[]= []
+const ModuleEmitter = DeviceEventEmitter;
 
 export default class Sequencer implements ISequencer {
 
@@ -108,6 +40,8 @@ export default class Sequencer implements ISequencer {
         private requestFrame = -1;
         private playingFrame = -1;
         private restartAfterDisable = false;
+        private _instanceId: string | number[];
+        private _threads: Promise<boolean>[] = []
 
         constructor(
             entryFrames: TEntryFrameProps[],
@@ -122,6 +56,7 @@ export default class Sequencer implements ISequencer {
                 this.opacityValue = opacityValue;
                 this.movementValue = movementValue;
                 this.restartAfterDisable = restartAfterDisable || false;
+                this._instanceId = uuid.v4();
                 for (let [_, frame] of Object.entries(entryFrames)) {
                     const AnimationFrame: TFrame = {
                         options: {
@@ -159,6 +94,7 @@ export default class Sequencer implements ISequencer {
 
     stop() {
         // console.log('STOP');
+        if (this.stopped) return false;
         if (this.started && !this.stopped) {
             this.stopped = true;
             this.started = false;
@@ -169,19 +105,8 @@ export default class Sequencer implements ISequencer {
             else {
                 return this.pause();
             }
+            
         }
-    }
-
-    reset() {
-        // console.log('RESET');
-        for (let frame of this.frames) {
-            for (let sequence of frame.sequences) {
-                sequence.animation.reset()
-            }
-        }
-        this.setStyles({...updateFrameStyles(this.styles, this.frames[0].sequences[0], {opacityValue: this.opacityValue, movementValue: this.movementValue })});
-        this.playingFrame = -1;
-        return true;
     }
 
     private start() {
@@ -199,30 +124,36 @@ export default class Sequencer implements ISequencer {
     }
 
     private pause() {
-        // console.log('PAUSE');
+        if (this.paused) return false;
         this.paused = true;
-        for (let frame of this.frames) {
-            for (let sequence of frame.sequences) {
-                sequence.animation.stop()
-            }
-        }
+        for (let frame of this.frames) for (let sequence of frame.sequences) sequence.animation.stop()
+        ModuleEmitter.removeAllListeners(this._instanceId+'frame.stopped');
         return true;
     }
 
+    private reset() {
+        for (let frame of this.frames)
+            for (let sequence of frame.sequences)  sequence.animation.reset()
+        this.setStyles({...updateFrameStyles(this.styles, this.frames[0].sequences[0], {opacityValue: this.opacityValue, movementValue: this.movementValue })});
+        ModuleEmitter.emit(this._instanceId+'frame.stopped');
+        ModuleEmitter.removeAllListeners(this._instanceId+'frame.stopped');
+        this.playingFrame = -1;
+        return true;
+    }
+    
     private terminate() {
         if (this.infinite && !this.paused) {
-            this.start();
             return false;
         }
-        else {
+        else if (!this.infinite) {
             this.terminated = true
             return true;
         }
+        return false;
     }
 
 
     async _playFrame(i: number) {
-        // console.log('PLAY : '+i);
         this.playingFrame = i;
 
         const Frame: TFrame = this.frames[i];
@@ -230,15 +161,20 @@ export default class Sequencer implements ISequencer {
         if (Frame?.options?.onStart) Frame.options.onStart();
     
         const frameStyles:TDynamicStyles = {}
-        const threadSequences: Promise<boolean>[]= [];
-        for (const [_, sequence] of sequences) {
-            THREADS_SEQUENCES.push(new Promise((resolve,rej) => { 
-                updateFrameStyles(frameStyles, sequence, { opacityValue: this.opacityValue, movementValue: this.movementValue });
-                sequence.animation.start(() =>{
 
-                    //DEvNote : callback exceessive number 501
+        this._threads = [];
+        for (const [_, sequence] of sequences) {
+            this._threads.push(new Promise((resolve,rej) => { 
+                //DevNote Bug from NativeModule : exceessive callback
+                updateFrameStyles(frameStyles, sequence, { opacityValue: this.opacityValue, movementValue: this.movementValue });
+                const Event = ModuleEmitter.addListener(this._instanceId+'frame.stopped', () => {
+                    return resolve(false);
+                })
+                return sequence.animation.start(() =>{
+                    Event.remove()
                     return resolve(true)
                 })
+                
             }))
         }
 
@@ -246,7 +182,9 @@ export default class Sequencer implements ISequencer {
         if (this.infinite) this.setStyles({...this.styles,...frameStyles});
         else this.setStyles({...frameStyles})
         
-        return Promise.all(THREADS_SEQUENCES).then(() => { 
+        return Promise.all(this._threads).then(() => { 
+            console.log('Promise ALL OK');
+            console.log(this._threads);
             if (Frame?.options?.onFinish) Frame.options.onFinish();
             return i + 1;
         })
@@ -255,18 +193,21 @@ export default class Sequencer implements ISequencer {
     }
 
     private async _continueFrame(i: number) {
-        // console.log('CONTINUE :'+i);
         const Frame: TFrame = this.frames[i];
         const sequences = Object.entries(Frame.sequences);
-        const threadSequences = [];
+        this._threads = [];
         for (const [_, sequence] of sequences) {
-            threadSequences.push(new Promise((resolve,rej) => {
-                sequence.animation.start(() =>{
+            this._threads.push(new Promise((resolve,rej) => {
+                const Event = ModuleEmitter.addListener(this._instanceId+'frame.stopped', () => {
+                    return resolve(false);
+                })
+                return sequence.animation.start(() =>{
+                    Event.remove()
                     resolve(true)
                 })
             }))
         }
-        return Promise.all(threadSequences).then(() => { 
+        return Promise.all(this._threads).then(() => { 
             if (Frame?.options?.onFinish) Frame.options.onFinish();
             return i + 1;
         })
@@ -274,7 +215,10 @@ export default class Sequencer implements ISequencer {
 
     private async _requestNextFrame(i: number): Promise<boolean> {
         if (this.stopped) return false;
-        else if (i >= this.frames.length) return this.terminate()
+        else if (i >= this.frames.length)  {
+            if (this.terminate()) return false;
+            else return await this._playFrame(0).then(this._requestNextFrame.bind(this))
+        }
         else return await this._playFrame(i).then(this._requestNextFrame.bind(this))
     }
 }

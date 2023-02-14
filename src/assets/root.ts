@@ -6,11 +6,18 @@ export default {
     },
     justifyCenter: {
         justifyContent: 'center',
-    } as ViewStyle,
+    },
+    justifyBetween: {
+        justifyContent: 'space-between',
+    },
     alignCenter: {
         alignItems: 'center'
-    } as ViewStyle,
+    },
     verticalMiddle: {
         verticalAlign: 'middle',
-    } as ViewStyle,
-};
+    },
+    directionRow: {
+        flexDirection: 'row'
+    },
+
+} as { [key: string]: ViewStyle };

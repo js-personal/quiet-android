@@ -5,7 +5,7 @@ import { CustomTheme } from '@assets/themes';
 
 import useTranslation from '@composables/useTranslation';
 
-import BaseAnimationChain, { TEntryFrameProps } from '@components/BaseAnimationChain';
+import BaseSequencer, { TEntryFrameProps } from '@components/BaseSequencer';
 
 import { memo } from 'react';
 
@@ -192,35 +192,35 @@ export default memo((props: Props) => {
 
     return (
         <View style={[RootCSS.container, RootCSS.justifyCenter, RootCSS.alignCenter]}>
-            <BaseAnimationChain frames={framesTextWelcome} play={enabled} restartAfterDisable={true}>
+            <BaseSequencer frames={framesTextWelcome} play={enabled} restartAfterDisable={true}>
                 <Text style={styles.textWelcome}>{translate('w.welcome')}</Text>
-            </BaseAnimationChain>
-            <BaseAnimationChain frames={framesTextOn} play={enabled} restartAfterDisable={true}>
+            </BaseSequencer>
+            <BaseSequencer frames={framesTextOn} play={enabled} restartAfterDisable={true}>
                 <Text style={styles.textOn}>{translate('w.on')}</Text>
-            </BaseAnimationChain>
+            </BaseSequencer>
 
-            <BaseAnimationChain frames={framesCtnLogo} play={enabled} restartAfterDisable={true}>
+            <BaseSequencer frames={framesCtnLogo} play={enabled} restartAfterDisable={true}>
                 <View style={styles.logoContainer}>
-                    <BaseAnimationChain frames={framesLogoImage} play={enabled} restartAfterDisable={true}>
+                    <BaseSequencer frames={framesLogoImage} play={enabled} restartAfterDisable={true}>
                         <Image source={require('@assets/img/logo.png')} style={styles.logo} />
-                    </BaseAnimationChain>
-                    <BaseAnimationChain frames={framesLogoTitle} play={enabled} restartAfterDisable={true}>
+                    </BaseSequencer>
+                    <BaseSequencer frames={framesLogoTitle} play={enabled} restartAfterDisable={true}>
                         <Text style={styles.textApp}>Quiet</Text>
-                    </BaseAnimationChain>
+                    </BaseSequencer>
                 </View>
-            </BaseAnimationChain>
-            <BaseAnimationChain frames={framesTextDescription} play={enabled} restartAfterDisable={true}>
+            </BaseSequencer>
+            <BaseSequencer frames={framesTextDescription} play={enabled} restartAfterDisable={true}>
                 <View style={styles.logoContainer}>
                     <Text style={styles.textDescription}>{translate('present.description')}</Text>
                 </View>
-            </BaseAnimationChain>
-            <BaseAnimationChain frames={framesSlideTouch} play={enabled}>
+            </BaseSequencer>
+            <BaseSequencer frames={framesSlideTouch} play={enabled}>
                 <View style={[styles.touchContainer,{backgroundColor: 'red'}]}>
-                    <BaseAnimationChain frames={framesSlideTouchHand} infinite={true} play={enabled}>
+                    <BaseSequencer frames={framesSlideTouchHand} infinite={true} play={enabled}>
                         <Image source={linkImageTouchHand} style={styles.touchIcon} />
-                    </BaseAnimationChain>
+                    </BaseSequencer>
                 </View>
-            </BaseAnimationChain>
+            </BaseSequencer>
         </View>
     );
 });

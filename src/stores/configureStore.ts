@@ -1,8 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
-import logger from 'redux-logger';
+// import logger from 'redux-logger';
 import appReducer from './app/appSlice';
 import clientReducer from './client/clientSlice';
-// import profileReducer from './modules/profile/profileSlice'
 
 const store = configureStore({
     reducer: {
