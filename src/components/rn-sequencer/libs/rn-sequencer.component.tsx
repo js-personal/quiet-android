@@ -1,16 +1,24 @@
+/************************************
+ * 
+ * 2023 Jérémy Sarteur
+ *  *
+ */
+
 import type { SetStateAction, MemoExoticComponent } from 'react';
-import { Dispatch, memo, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated } from 'react-native';
+import React, { Dispatch, memo, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Text, View } from 'react-native';
 import type { ISequencer, TEntryFrameProps,TDynamicStyles } from './rn-sequencer.types';
 import SequencerCore from './rn-sequencer';
+import { ReactElement } from 'react';
 
 
 type TEntryBaseSequencerProps = {
-    children: JSX.Element | undefined;
+    children: JSX.Element  | undefined;
     frames: TEntryFrameProps[];
     infinite?: boolean;
     play?: boolean;
     restartAfterDisable?: boolean;
+    style?: React.CSSProperties;
 }
 
 const defaultProps: TEntryBaseSequencerProps = {
@@ -19,9 +27,12 @@ const defaultProps: TEntryBaseSequencerProps = {
     frames: [] as TEntryFrameProps[],
     play: true,
     restartAfterDisable: false,
+    style: {} as React.CSSProperties,
 };
 
-function useDefaultProps<P extends object>(
+
+
+export function useDefaultProps<P extends object>(
     props: P,
   ): P & TEntryBaseSequencerProps {
     return {
@@ -29,41 +40,62 @@ function useDefaultProps<P extends object>(
       ...props
     };
   }
+
+
+type SequencerComponent<T> = MemoExoticComponent<Animated.AnimatedComponent<T>>
+
+ type TSequencerComponentFactory<A, S> = (AnimatedWrapped: A, SubWrapper: S) => SequencerComponent<S>
+
+
+const  SequencerComponentFactory = <A extends React.ComponentType<{}>,S extends React.ComponentType<{}>>(AnimatedWrapper: A, SubWrapper: S): TSequencerComponentFactory<A, S> => {
+
+
+   return React.memo(React.forwardRef((props: TEntryBaseSequencerProps, ref) => {
+        const { children, frames, infinite, play, restartAfterDisable } = useDefaultProps(props);
+        const opacityValue = useRef(new Animated.Value(0)).current
+        const movementValue = useRef(new Animated.Value(0)).current
+    
+        const [ styles, setStyles ]: [TDynamicStyles, Dispatch<SetStateAction<TDynamicStyles>>] = useState({
+            opacity: opacityValue,
+        } as TDynamicStyles);
+    
+        const sequencer : ISequencer = useMemo(
+            () => new SequencerCore(frames, styles, setStyles, { infinite, restartAfterDisable }, {opacityValue, movementValue}), 
+            []
+        );
+    
+        useEffect(() => {
+            if (play) {
+                sequencer.run();
+            }
+            else {
+                sequencer.stop();
+            }
+        }, [play])
+
+        return <AnimatedWrapper style={styles} ref={ref}><SubWrapper style={props.style}>{props.children}</SubWrapper></AnimatedWrapper>
+     }), (prevProps: TEntryBaseSequencerProps, nextProps: TEntryBaseSequencerProps) => prevProps.play === nextProps.play)
+    
+    }
+    
+
  /**
    * New Sequencer Component
-   *
+   * View | Text
    * @params play = boolean (dynamic)
    * @params children = JSX.Element
    * @params frames = TEntryFrameProps[]
    * @params infinite = boolean
    * @params restartAfterDisable = boolean
    */
-const SequencerComponent: MemoExoticComponent<React.FC<TEntryBaseSequencerProps>> = memo((_props: TEntryBaseSequencerProps) => {
-    const { children, frames, infinite, play, restartAfterDisable } = useDefaultProps(_props);
-    const opacityValue = useRef(new Animated.Value(0)).current
-    const movementValue = useRef(new Animated.Value(0)).current
+type TSequencerTypes = {
+    View: SequencerComponent<View>,
+    Text: SequencerComponent<Text>,
+}
 
-    const [ styles, setStyles ]: [TDynamicStyles, Dispatch<SetStateAction<TDynamicStyles>>] = useState({
-        opacity: opacityValue,
-    } as TDynamicStyles);
+export const SequencerTypes: TSequencerTypes = {
+    View: SequencerComponentFactory(Animated.View, View),
+    Text: SequencerComponentFactory(Animated.View, Text),
+}
 
-    const sequencer : ISequencer = useMemo(
-        () => new SequencerCore(frames, styles, setStyles, { infinite, restartAfterDisable }, {opacityValue, movementValue}), 
-        []
-    );
-
-    useEffect(() => {
-        if (play) {
-            sequencer.run();
-        }
-        else {
-            sequencer.stop();
-        }
-    }, [play])
-
-    return <Animated.View style={[styles]}>{children}</Animated.View>
-
-},(prev, next) => (prev.play === next.play && prev.infinite === next.infinite));
-
-
-export default SequencerComponent;
+export default SequencerTypes;

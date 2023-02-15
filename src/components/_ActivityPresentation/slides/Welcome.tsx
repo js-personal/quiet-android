@@ -6,7 +6,7 @@ import { CustomTheme } from '@assets/themes';
 import useTranslation from '@composables/useTranslation';
 
 import type { TEntryFrameProps } from '@components/rn-sequencer';
-import SequencerComponent from '@components/rn-sequencer';
+import Sequencer from '@components/rn-sequencer';
 
 
 import { memo } from 'react';
@@ -194,35 +194,31 @@ export default memo((props: Props) => {
 
     return (
         <View style={[RootCSS.container, RootCSS.justifyCenter, RootCSS.alignCenter]}>
-            <SequencerComponent frames={framesTextWelcome} play={enabled} restartAfterDisable={true}>
-                <Text style={styles.textWelcome}>{translate('w.welcome')}</Text>
-            </SequencerComponent>
-            <SequencerComponent frames={framesTextOn} play={enabled} restartAfterDisable={true}>
-                <Text style={styles.textOn}>{translate('w.on')}</Text>
-            </SequencerComponent>
+            <Sequencer.Text style={styles.textWelcome} frames={framesTextWelcome} play={enabled} restartAfterDisable={true}>
+                {translate('w.welcome')}
+            </Sequencer.Text>
+            <Sequencer.Text style={styles.textOn} frames={framesTextOn} play={enabled} restartAfterDisable={true}>
+                {translate('w.on')}
+            </Sequencer.Text>
 
-            <SequencerComponent frames={framesCtnLogo} play={enabled} restartAfterDisable={true}>
+            <Sequencer.View frames={framesCtnLogo} play={enabled} restartAfterDisable={true}>
                 <View style={styles.logoContainer}>
-                    <SequencerComponent frames={framesLogoImage} play={enabled} restartAfterDisable={true}>
+                    <Sequencer.View frames={framesLogoImage} play={enabled} restartAfterDisable={true}>
                         <Image source={require('@assets/img/logo.png')} style={styles.logo} />
-                    </SequencerComponent>
-                    <SequencerComponent frames={framesLogoTitle} play={enabled} restartAfterDisable={true}>
+                    </Sequencer.View>
+                    <Sequencer.Text frames={framesLogoTitle} play={enabled} restartAfterDisable={true}>
                         <Text style={styles.textApp}>Quiet</Text>
-                    </SequencerComponent>
+                    </Sequencer.Text>
                 </View>
-            </SequencerComponent>
-            <SequencerComponent frames={framesTextDescription} play={enabled} restartAfterDisable={true}>
-                <View style={styles.logoContainer}>
+            </Sequencer.View>
+            <Sequencer.View style={styles.logoContainer} frames={framesTextDescription} play={enabled} restartAfterDisable={true}>
                     <Text style={styles.textDescription}>{translate('present.description')}</Text>
-                </View>
-            </SequencerComponent>
-            <SequencerComponent frames={framesSlideTouch} play={enabled}>
-                <View style={[styles.touchContainer,{backgroundColor: 'red'}]}>
-                    <SequencerComponent frames={framesSlideTouchHand} infinite={true} play={enabled}>
+            </Sequencer.View>
+            <Sequencer.View style={[styles.touchContainer,{backgroundColor: 'red'}]} frames={framesSlideTouch} play={enabled}>
+                    <Sequencer.View frames={framesSlideTouchHand} infinite={true} play={enabled}>
                         <Image source={linkImageTouchHand} style={styles.touchIcon} />
-                    </SequencerComponent>
-                </View>
-            </SequencerComponent>
+                    </Sequencer.View>
+            </Sequencer.View>
         </View>
     );
 });

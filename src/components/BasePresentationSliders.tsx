@@ -2,7 +2,7 @@ import type { MemoExoticComponent } from 'react';
 
 import { memo, useCallback, useRef, useMemo, ReactElement } from 'react';
 import { StyleSheet, View, NativeScrollEvent, Animated, NativeSyntheticEvent, ListRenderItem } from 'react-native';
-import SequencerComponent from '@components/rn-sequencer';
+import Sequencer from '@components/rn-sequencer';
 import type { TEntryFrameProps } from '@components/rn-sequencer';
 import PaginationDotLiquid from './PaginationDotLiquid';
 
@@ -61,12 +61,11 @@ const BasePresentationSliders:MemoExoticComponent<React.FC<TEntryBasePresentatio
             const frames: TEntryFrameProps[] | undefined = props.paginationEnabled && props.paginationAppearSequences 
             ? props.paginationAppearSequences
             : props.paginationDisappearSequences;
-            
             if (frames)
                 return (
-                    <SequencerComponent frames={ frames }>
+                    <Sequencer.View frames={ frames }>
                       {PaginationMemo}
-                    </SequencerComponent>
+                    </Sequencer.View>
                 );
             else return PaginationMemo
         }
